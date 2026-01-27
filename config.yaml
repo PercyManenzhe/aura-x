@@ -1,0 +1,16 @@
+tourism:
+  default_location: "Mpumalanga Panorama Route"
+  modes:
+    - 2D
+    - 3D
+    - 4D
+
+safety:
+  mine:
+    risk_level: "High"
+  train:
+    risk_level: "Medium"
+
+cloud:
+  provider: "Huawei"
+  use_mock: true

@@ -1,3 +1,8 @@
+pip freeze > requirements.txt
+
+fastapi
+pydantic
+python-dotenv
 fastapi
 pydantic
 python-dotenv
