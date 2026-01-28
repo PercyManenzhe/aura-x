@@ -4,12 +4,16 @@ description: "Demo workflow for Aura-X: Tourism, Train, Mine scenarios"
 steps:
   - name: analyze
     agent: TourismAgent
-    task: "Assess system readiness"
+    task: Assess system readiness
+
   - name: decide
     agent: DecisionAgent
-    task: "Determine next action"
+    task: Determine next action
+
   - name: respond
     agent: ResponseAgent
-    task: "Generate output report"
+    task: Generate output report
 
-
+  - name: reasoning
+    agent: ReasoningAgent
+    task: Perform internal reasoning

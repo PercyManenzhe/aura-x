@@ -7,3 +7,7 @@ class TourismAgent:
         print(f"🕶 Experience Level: {level}")
         print("✨ Generating immersive virtual content...")
 
+class TourismAgent:
+    def run(self, task: str):
+        return f"TourismAgent: Completed '{task}'"
+from app.agents.reasoning_agent import ReasoningAgent
