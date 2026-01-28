@@ -1,16 +1,14 @@
-tourism:
-  default_location: "Mpumalanga Panorama Route"
-  modes:
-    - 2D
-    - 3D
-    - 4D
+app:
+  name: aura-x
+  mode: local-demo
 
-safety:
-  mine:
-    risk_level: "High"
-  train:
-    risk_level: "Medium"
+llm:
+  provider: mock
+  temperature: 0.7
 
-cloud:
-  provider: "Huawei"
-  use_mock: true
+workflow:
+  steps:
+    - analyze
+    - decide
+    - respond
+
