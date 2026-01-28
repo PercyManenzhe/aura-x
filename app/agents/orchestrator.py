@@ -1,18 +1,18 @@
 
 
+# app/agents/orchestrator.py
+# app/agents/orchestrator.py
 import yaml
-import yaml
-
-from app.agents.tourism_agent import TourismAgent
-from app.agents.decision_agent import DecisionAgent
-from app.agents.response_agent import ResponseAgent
+from app.agents.tourism_agent import TourismAgent, DecisionAgent, ResponseAgent
 from app.agents.reasoning_agent import ReasoningAgent
 
 
 class AuraXOrchestrator:
     def __init__(self, yaml_path="config.yaml"):
+        # Load workflow
         self.workflow = self.load_workflow(yaml_path)
 
+        # Register all agents
         self.agent_map = {
             "TourismAgent": TourismAgent(),
             "DecisionAgent": DecisionAgent(),
@@ -26,7 +26,7 @@ class AuraXOrchestrator:
 
     def run(self):
         results = {}
-
+        
         for step in self.workflow["steps"]:
             step_name = step["name"]
             agent_name = step["agent"]
@@ -39,11 +39,12 @@ class AuraXOrchestrator:
                 results[step_name] = output
                 print(f"{step_name.upper()}: {output}")
             else:
-                print(f"{step_name.upper()}: Agent {agent_name} not found!")
                 results[step_name] = f"Agent {agent_name} not found!"
+                print(f"{step_name.upper()}: Agent {agent_name} not found!")
+
 
         return results
 
-
+ 
 
 

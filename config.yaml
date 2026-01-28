@@ -2,18 +2,18 @@ workflow_name: "Tourism & Industrial Demo"
 description: "Demo workflow for Aura-X: Tourism, Train, Mine scenarios"
 
 steps:
-  - name: analyze
-    agent: TourismAgent
-    task: Assess system readiness
+    - name: analyze
+      agent: TourismAgent
+      task: Assess system readiness
 
-  - name: decide
-    agent: DecisionAgent
-    task: Determine next action
+    - name: decide
+      agent: DecisionAgent
+      task: Determine next action
 
-  - name: respond
-    agent: ResponseAgent
-    task: Generate output report
+    - name: respond
+      agent: ResponseAgent
+      task: Generate output report
 
-  - name: reasoning
-    agent: ReasoningAgent
-    task: Perform internal reasoning
+    - name: reasoning
+      agent: ReasoningAgent
+      task: Perform internal reasoning
