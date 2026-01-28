@@ -1,14 +1,15 @@
-app:
-  name: aura-x
-  mode: local-demo
+workflow_name: "Tourism & Industrial Demo"
+description: "Demo workflow for Aura-X: Tourism, Train, Mine scenarios"
 
-llm:
-  provider: mock
-  temperature: 0.7
+steps:
+  - name: analyze
+    agent: TourismAgent
+    task: "Assess system readiness"
+  - name: decide
+    agent: DecisionAgent
+    task: "Determine next action"
+  - name: respond
+    agent: ResponseAgent
+    task: "Generate output report"
 
-workflow:
-  steps:
-    - analyze
-    - decide
-    - respond
 

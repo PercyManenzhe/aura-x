@@ -1,4 +1,5 @@
 
+
 from app.agents.orchestrator import AuraXOrchestrator
 
 
@@ -7,15 +8,17 @@ from app.agents.orchestrator import AuraXOrchestrator
 
 
 def main():
-    print("🚀 Starting Aura-X Local Demo")
+    print("🚀 Starting Aura-X Local Demo with YAML workflow")
 
     orchestrator = AuraXOrchestrator()
-    result = orchestrator.run("Assess system readiness")
+    result = orchestrator.run()
 
     print("\n🧠 Aura-X Output:")
-    print(result)
+    for step, output in result.items():
+        print(f"{step.upper()}: {output}")
 
 if __name__ == "__main__":
     main()
+
 
 
