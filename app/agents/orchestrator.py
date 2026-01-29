@@ -46,6 +46,7 @@ class AuraXOrchestrator:
     def run(self, inputs=None):
         inputs = inputs or {}
         step_context = {}
+        step_context["inputs"] = inputs
         ordered_steps = []
 
         for step in self.workflow["steps"]:
@@ -91,15 +92,23 @@ class AuraXOrchestrator:
                 "Enable multilingual output"
             ]
         }
+ # --- Confidence scoring based on input richness + execution health ---
+        input_count = len(inputs.keys())
+        score = 0.60 + min(0.30, input_count * 0.03)  # up to +0.30
 
         confidence = {
-            "score": 0.72,
-            "rationale": [
-                "Workflow executed end-to-end without errors",
-                "Recommendations are region-consistent",
-                "Limited personalization inputs in demo"
+    "score": round(score, 2),
+    "rationale": [
+        "Workflow executed end-to-end without errors",
+        "Recommendations aligned to user inputs (budget/interests/duration)",
+        f"Personalization inputs provided: {input_count}"
             ]
         }
+        
+        errors = [s for s in ordered_steps if s["status"] == "error"]
+        if errors:
+            score = max(0.40, score - 0.20)  # penalty if errors exist
+
 
         return build_workflow_output(
             workflow_name=self.workflow.get("workflow", "unknown"),

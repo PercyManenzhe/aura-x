@@ -8,13 +8,18 @@ import json
 def main():
     orchestrator = AuraXOrchestrator()
 
-    result = orchestrator.run(
-        inputs={
-            "location": "Mpumalanga",
-            "season": "All-year",
-            "visitor_type": "General"
-        }
-    )
+    result = orchestrator.run(inputs={
+    "location": "Mpumalanga",
+    "season": "All-year",
+    "visitor_type": "General",
+    "budget_level": "mid",
+    "group_type": "family",
+    "duration_days": 3,
+    "interests": ["nature", "culture"]
+})
+
+
+    
 
     print("\n🧠 Aura-X Structured Output:\n")
     print(json.dumps(result, indent=2))
