@@ -1,4 +1,17 @@
 from app.agents.orchestrator import AuraXOrchestrator
+
+def build_workflow_output(workflow_name, inputs, step_results, final_summary, confidence):
+    """
+    Helper to assemble the workflow output dictionary.
+    """
+    return {
+        "workflow": workflow_name,
+        "inputs": inputs,
+        "steps": step_results,
+        "final_summary": final_summary,
+        "confidence": confidence,
+    }
+
 def run(self, inputs=None):
     inputs = inputs or {}
     step_results = {}
