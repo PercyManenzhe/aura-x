@@ -17,3 +17,21 @@ steps:
     - name: reasoning
       agent: ReasoningAgent
       task: Perform internal reasoning
+
+workflow: tourism_intelligence
+steps:
+  - name: analyze
+    agent: TourismAgent
+    task: "Analyze tourism context for Mpumalanga province"
+
+  - name: reasoning
+    agent: ReasoningAgent
+    task: "Reason over visitor preferences and seasonal trends"
+
+  - name: recommend
+    agent: RecommendationAgent
+    task: "Recommend top destinations and experiences"
+
+  - name: respond
+    agent: ResponseAgent
+    task: "Generate tourism insight report"

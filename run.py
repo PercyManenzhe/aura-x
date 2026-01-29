@@ -1,20 +1,30 @@
 from app.agents.orchestrator import AuraXOrchestrator
-reasoning_output = self.reasoning_agent.run(task, context)
-results["reasoning"] = reasoning_output
+def run(self):
+    results = {}
+    context = {}
 
+    for step in self.workflow["steps"]:
+        step_name = step["name"]
+        agent_name = step["agent"]
+        task = step["task"]
 
-def main():
-    print("🚀 Starting Aura-X Virtual Tourism AI System")
+        agent = self.agent_map.get(agent_name)
 
-    system = AuraXOrchestrator()
-    system.start_experience(
-        mode="tourism",
-        location="Mpumalanga Panorama Route",
-        level="4D"
-    )
+        if agent:
+            if agent_name in ["ReasoningAgent", "RecommendationAgent"]:
+                output = agent.run(task, context)
+            else:
+                output = agent.run(task)
 
-if __name__ == "__main__":
-    main()
+            results[step_name] = output
+            context[step_name] = output
+
+            print(f"{step_name.upper()}: {output}")
+        else:
+            print(f"{step_name.upper()}: Agent {agent_name} not found")
+
+    return results
+
 
 
 
