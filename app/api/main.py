@@ -6,10 +6,14 @@ from app.agents.orchestrator import AuraXOrchestrator
 
 app = FastAPI(title="Aura-X API", version="1.0")
 
-orchestrator = AuraXOrchestrator()
-
+workflow_map = {
+    "tourism": "config.yaml",
+    "mining": "workflows/mining_safety.yaml",
+    "municipal": "workflows/municipal_ops.yaml",
+}
 
 class RunRequest(BaseModel):
+    workflow: Optional[str] = "tourism"
     location: Optional[str] = "Mpumalanga"
     season: Optional[str] = "All-year"
     visitor_type: Optional[str] = "General"
@@ -19,7 +23,7 @@ class RunRequest(BaseModel):
     interests: Optional[List[str]] = ["nature"]
     extra: Optional[Dict[str, Any]] = None
 
-    
+
 @app.get("/")
 def root():
     return {"message": "Aura-X API running. Visit /docs for Swagger UI."}
@@ -32,10 +36,13 @@ def health():
 
 @app.post("/run")
 def run_aura_x(req: RunRequest):
-    inputs = req.model_dump()
+    inputs = req.model_dump(exclude={"workflow"})
     # keep extra optional, but merge if provided
     extra = inputs.pop("extra", None) or {}
     inputs.update(extra)
 
+    # select workflow-specific yaml and create orchestrator per request
+    yaml_path = workflow_map.get(req.workflow, "config.yaml")
+    orchestrator = AuraXOrchestrator(yaml_path=yaml_path)
     result = orchestrator.run(inputs=inputs)
     return result

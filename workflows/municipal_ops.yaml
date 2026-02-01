@@ -1,0 +1,20 @@
+workflow: municipal_operations_intelligence
+steps:
+  - name: analyze
+    agent: MunicipalOpsAgent
+    task: Analyze municipal service delivery context
+
+  - name: reasoning
+    agent: ReasoningAgent
+    task: Identify bottlenecks and prioritize interventions
+
+  - name: recommend
+    agent: MunicipalRecommendationAgent
+    task: Recommend actions to improve service delivery
+
+  - name: respond
+    agent: ResponseAgent
+    task: Generate municipal insight report
+
+
+    notes: This workflow focuses on enhancing municipal operations through analysis, reasoning, recommendations, reporting, and monitoring.

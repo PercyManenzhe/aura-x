@@ -6,19 +6,25 @@ import yaml
 from datetime import datetime
 import uuid
 
+from app.agents.monitoring_agent import MonitoringAgent
 from app.agents.tourism_agent import TourismAgent
 from app.agents.decision_agent import DecisionAgent
 from app.agents.response_agent import ResponseAgent
 from app.agents.reasoning_agent import GenericReasoningAgent
 from app.agents.recommendation_agent import RecommendationAgent
+from app.agents.mining_safety_agent import MiningSafetyAgent
+from app.agents.mining_recommendation_agent import MiningRecommendationAgent
+from app.agents.municipal_ops_agent import MunicipalOpsAgent
+from app.agents.municipal_recommendation_agent import MunicipalRecommendationAgent
 
 
-def build_workflow_output(workflow_name, inputs, step_results, final_summary, confidence):
+
+def build_workflow_output(workflow_name, run_id, inputs, step_results, final_summary, confidence):
     return {
         "schema_version": "1.0",
         "project": "Aura-X",
         "workflow": workflow_name,
-        "run_id": f"AX-{uuid.uuid4().hex[:8].upper()}",
+        "run_id": run_id,
         "timestamp": datetime.now().isoformat(),
         "inputs": inputs,
         "steps": step_results,
@@ -27,16 +33,25 @@ def build_workflow_output(workflow_name, inputs, step_results, final_summary, co
     }
 
 
+
 class AuraXOrchestrator:
     def __init__(self, yaml_path="config.yaml"):
+        self.yaml_path = yaml_path
         self.workflow = self.load_workflow(yaml_path)
 
         self.agent_map = {
             "TourismAgent": TourismAgent(),
             "DecisionAgent": DecisionAgent(),
             "ResponseAgent": ResponseAgent(),
-            "ReasoningAgent": GenericReasoningAgent(),     # YAML-friendly name
+            "ReasoningAgent": GenericReasoningAgent(),
             "RecommendationAgent": RecommendationAgent(),
+            "MonitoringAgent": MonitoringAgent(),
+
+            "MiningSafetyAgent": MiningSafetyAgent(),
+            "MiningRecommendationAgent": MiningRecommendationAgent(),
+
+            "MunicipalOpsAgent": MunicipalOpsAgent(),
+            "MunicipalRecommendationAgent": MunicipalRecommendationAgent(),
         }
 
     def load_workflow(self, path):
@@ -45,20 +60,38 @@ class AuraXOrchestrator:
 
     def run(self, inputs=None):
         inputs = inputs or {}
-        step_context = {}
-        step_context["inputs"] = inputs
+
+        # One run_id per execution (DO NOT generate inside loop)
+        run_id = f"AX-{uuid.uuid4().hex[:8].upper()}"
+        workflow_name = self.workflow.get("workflow", "unknown")
+
+        step_context = {
+            "inputs": inputs,
+            "run_id": run_id,
+            "workflow": workflow_name,
+        }
+
         ordered_steps = []
 
+        # Execute each step defined in YAML (skip MonitoringAgent if present)
         for step in self.workflow["steps"]:
             step_name = step["name"]
             agent_name = step["agent"]
             task = step["task"]
 
+            # Skip monitor if you accidentally left it in YAML
+            if agent_name == "MonitoringAgent" or step_name == "monitor":
+                continue
+
             agent = self.agent_map.get(agent_name)
 
             if agent:
-                # Agents that accept context
-                if agent_name in ["ReasoningAgent", "RecommendationAgent"]:
+                if agent_name in [
+                    "ReasoningAgent",
+                    "RecommendationAgent",
+                    "MiningRecommendationAgent",
+                    "MunicipalRecommendationAgent",
+                ]:
                     output = agent.run(task, step_context)
                 else:
                     output = agent.run(task)
@@ -68,57 +101,71 @@ class AuraXOrchestrator:
                 output = f"Agent {agent_name} not found"
                 status = "error"
 
-            ordered_steps.append({
+            step_record = {
                 "step": step_name,
                 "agent": agent_name,
                 "task": task,
                 "status": status,
-                "output": output
-            })
+                "output": output,
+            }
 
+            ordered_steps.append(step_record)
             step_context[step_name] = output
+
             print(f"{step_name.upper()}: {output}")
 
+        # ---- Confidence scoring (simple + explainable) ----
+        input_count = len(inputs.keys())
+        score = 0.60 + min(0.30, input_count * 0.03)
+
+        errors = [s for s in ordered_steps if s["status"] == "error"]
+        if errors:
+            score = max(0.40, score - 0.20)
+
+        confidence = {
+            "score": round(score, 2),
+            "rationale": [
+                "Workflow executed end-to-end without errors"
+                if not errors else "Workflow completed with missing agent(s)",
+                "Recommendations aligned to user inputs where provided",
+                f"Personalization inputs provided: {input_count}",
+            ],
+        }
+
+        # ---- Monitoring (run AFTER loop so it sees steps + confidence) ----
+        monitoring = self.agent_map["MonitoringAgent"].run(
+            "Capture run metrics and audit trail",
+            {
+                "workflow": workflow_name,
+                "run_id": run_id,
+                "steps": ordered_steps,
+                "confidence": confidence,
+            }
+        )
+
+        print(f"MONITOR: {monitoring}")
+
+        # ---- Summary ----
         final_summary = {
-            "summary": "Aura-X completed a multi-agent tourism workflow",
+            "summary": f"Aura-X completed workflow: {workflow_name}",
             "top_recommendations": (
                 step_context.get("recommend", {}).get("recommendations", [])
                 if isinstance(step_context.get("recommend"), dict)
                 else []
             ),
             "suggested_next_actions": [
-                "Add personalization inputs (budget, duration, interests)",
-                "Attach nearby services (lodging, transport, guides)",
-                "Enable multilingual output"
-            ]
+                "Add richer inputs for higher personalization",
+                "Enable multilingual output",
+                "Connect to Huawei Cloud storage and logging (OBS/LTS)",
+            ],
+            "monitoring": monitoring,  
         }
- # --- Confidence scoring based on input richness + execution health ---
-        input_count = len(inputs.keys())
-        score = 0.60 + min(0.30, input_count * 0.03)  # up to +0.30
-
-        confidence = {
-    "score": round(score, 2),
-    "rationale": [
-        "Workflow executed end-to-end without errors",
-        "Recommendations aligned to user inputs (budget/interests/duration)",
-        f"Personalization inputs provided: {input_count}"
-            ]
-        }
-        
-        errors = [s for s in ordered_steps if s["status"] == "error"]
-        if errors:
-            score = max(0.40, score - 0.20)  # penalty if errors exist
-
 
         return build_workflow_output(
-            workflow_name=self.workflow.get("workflow", "unknown"),
+            workflow_name=workflow_name,
+            run_id=run_id,
             inputs=inputs,
             step_results=ordered_steps,
             final_summary=final_summary,
-            confidence=confidence
+            confidence=confidence,
         )
-
-
- 
-
-
