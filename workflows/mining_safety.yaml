@@ -1,0 +1,19 @@
+workflow: mining_safety_compliance
+steps:
+  - name: analyze
+    agent: MiningSafetyAgent
+    task: Analyze mining safety and compliance context
+
+  - name: reasoning
+    agent: ReasoningAgent
+    task: Identify high-risk gaps and required actions
+
+  - name: recommend
+    agent: MiningRecommendationAgent
+    task: Recommend compliance actions and training modules
+
+  - name: respond
+    agent: ResponseAgent
+    task: Generate mining safety insight report
+
+ 
