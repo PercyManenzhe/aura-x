@@ -1,3 +1,5 @@
+import json
+
 from app.agents.orchestrator import AuraXOrchestrator
 
 def main():
@@ -9,8 +11,7 @@ def main():
         "shift": "night",
         "compliance_focus": ["PPE", "ventilation", "emergency_response"]
     })
-    print("\n🧠 Aura-X Mining Output:\n")
-    print(result)
+    
 
 if __name__ == "__main__":
     main()
