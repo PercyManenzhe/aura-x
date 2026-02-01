@@ -6,6 +6,7 @@ import yaml
 from datetime import datetime
 import uuid
 
+
 from app.agents.monitoring_agent import MonitoringAgent
 from app.agents.tourism_agent import TourismAgent
 from app.agents.decision_agent import DecisionAgent
@@ -53,6 +54,36 @@ class AuraXOrchestrator:
             "MunicipalOpsAgent": MunicipalOpsAgent(),
             "MunicipalRecommendationAgent": MunicipalRecommendationAgent(),
         }
+
+
+    def main():
+        orchestrator = AuraXOrchestrator(yaml_path="workflows/mining_safety.yaml")
+        result = orchestrator.run(inputs={
+            "site": "Underground Section A",
+            "hazards": ["poor ventilation", "slippery walkway"],
+            "incident_type": "near_miss",
+            "shift": "night",
+            "compliance_focus": ["PPE", "ventilation", "emergency_response"],
+        })
+        print("\n🧠 Aura-X Mining Output:\n")
+        print(result)
+    
+        # Example second run (municipal) — keeps variable scoped separately
+        orchestrator2 = AuraXOrchestrator(yaml_path="workflows/municipal_ops.yaml")
+        result2 = orchestrator2.run(inputs={
+            "municipality": "Example Local Municipality",
+            "service": "streetlights",
+            "issue": "outage",
+            "area": "Ward 12",
+            "priority": "high",
+            "constraints": ["limited budget", "cable theft risk"],
+        })
+        print("\n🧠 Aura-X Municipal Output:\n")
+        print(result2)
+    
+    if __name__ == "__main__":
+        main()
+
 
     def load_workflow(self, path):
         with open(path, "r") as f:
