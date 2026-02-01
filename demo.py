@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 import json
 import argparse
+from unittest import result
 from app.agents.orchestrator import AuraXOrchestrator
 
 WORKFLOW_MAP = {
@@ -9,6 +10,10 @@ WORKFLOW_MAP = {
     "mining": "workflows/mining_safety.yaml",
     "municipal": "workflows/municipal_ops.yaml",
 }
+from app.services.storage_adapter import save_run_local
+
+path = save_run_local(result)
+print(f"\n✅ Saved run output to: {path}")
 
 DEFAULT_INPUTS = {
     "tourism": {
