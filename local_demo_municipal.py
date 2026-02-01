@@ -1,3 +1,5 @@
+import json
+
 from app.agents.orchestrator import AuraXOrchestrator
 
 def main():
@@ -10,8 +12,7 @@ def main():
         "priority": "high",
         "constraints": ["limited budget", "cable theft risk"]
     })
-    print("\n🧠 Aura-X Municipal Output:\n")
-    print(result)
+
 
 if __name__ == "__main__":
     main()

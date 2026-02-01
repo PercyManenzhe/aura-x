@@ -1,0 +1,53 @@
+import json
+import argparse
+from app.agents.orchestrator import AuraXOrchestrator
+
+WORKFLOW_MAP = {
+    "tourism": "config.yaml",
+    "mining": "workflows/mining_safety.yaml",
+    "municipal": "workflows/municipal_ops.yaml",
+}
+
+DEFAULT_INPUTS = {
+    "tourism": {
+        "location": "Mpumalanga",
+        "season": "All-year",
+        "visitor_type": "General",
+        "budget_level": "mid",
+        "group_type": "family",
+        "duration_days": 3,
+        "interests": ["nature", "culture"],
+    },
+    "mining": {
+        "site": "Underground Section A",
+        "hazards": ["poor ventilation", "slippery walkway"],
+        "incident_type": "near_miss",
+        "shift": "night",
+        "compliance_focus": ["PPE", "ventilation", "emergency_response"],
+    },
+    "municipal": {
+        "municipality": "Example Local Municipality",
+        "service": "streetlights",
+        "issue": "outage",
+        "area": "Ward 12",
+        "priority": "high",
+        "constraints": ["limited budget", "cable theft risk"],
+    },
+}
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--workflow", choices=["tourism", "mining", "municipal"], default="tourism")
+    args = parser.parse_args()
+
+    yaml_path = WORKFLOW_MAP[args.workflow]
+    inputs = DEFAULT_INPUTS[args.workflow]
+
+    orchestrator = AuraXOrchestrator(yaml_path=yaml_path)
+    result = orchestrator.run(inputs=inputs)
+
+    print(f"\n🧠 Aura-X Output ({args.workflow.upper()}) (JSON):\n")
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+
+if __name__ == "__main__":
+    main()
