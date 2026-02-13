@@ -7,10 +7,21 @@ from app.agents.orchestrator import AuraXOrchestrator
 app = FastAPI(title="Aura-X API", version="1.0")
 
 workflow_map = {
+    # Core demos
     "tourism": "config.yaml",
     "mining": "workflows/mining_safety.yaml",
     "municipal": "workflows/municipal_ops.yaml",
+
+    # Tourism deep-dive domains
+    "tourism_safety_health": "workflows/tourism_safety_health.yaml",
+    "tourism_culture_authority": "workflows/tourism_culture_authority.yaml",
+    "tourism_logistics_ports": "workflows/tourism_logistics_ports.yaml",
+    "tourism_economic_opportunity": "workflows/tourism_economic_opportunity.yaml",
+
+    # Strategic infrastructure
+    "rail_corridor_tourism": "workflows/rail_corridor_tourism.yaml",
 }
+
 
 class RunRequest(BaseModel):
     workflow: Optional[str] = "tourism"

@@ -1,0 +1,21 @@
+workflow: tourism_logistics_ports
+steps:
+  - name: analyze
+    agent: TourismAgent
+    task: "Identify nearest airports, border gates, and access constraints for {location}"
+
+  - name: reasoning
+    agent: ReasoningAgent
+    task: "Recommend timing, movement, and logistics strategies given constraints"
+
+  - name: recommend
+    agent: RecommendationAgent
+    task: "Recommend transport options and itinerary sequence"
+
+  - name: respond
+    agent: ResponseAgent
+    task: "Generate Logistics briefing"
+
+  - name: monitor
+    agent: MonitoringAgent
+    task: "Capture run metrics and audit trail"

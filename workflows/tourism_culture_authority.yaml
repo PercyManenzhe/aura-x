@@ -1,0 +1,21 @@
+workflow: tourism_culture_authority
+steps:
+  - name: analyze
+    agent: TourismAgent
+    task: "Collect cultural, leadership, history, and museum context for {location}"
+
+  - name: reasoning
+    agent: ReasoningAgent
+    task: "Explain protocols, heritage significance, and respectful engagement guidance"
+
+  - name: recommend
+    agent: RecommendationAgent
+    task: "Recommend cultural routes, museums, heritage sites, and community experiences"
+
+  - name: respond
+    agent: ResponseAgent
+    task: "Generate Culture & Heritage briefing"
+
+  - name: monitor
+    agent: MonitoringAgent
+    task: "Capture run metrics and audit trail"
