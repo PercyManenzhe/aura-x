@@ -1,0 +1,21 @@
+workflow: tourism_economic_opportunity
+steps:
+  - name: analyze
+    agent: TourismAgent
+    task: "Identify economic development gaps and tourism investment opportunities in {location}"
+
+  - name: reasoning
+    agent: ReasoningAgent
+    task: "Prioritize high-impact investments and partnership models (public/private/traditional authority)"
+
+  - name: recommend
+    agent: RecommendationAgent
+    task: "Recommend investable opportunities with rationale and suggested next actions"
+
+  - name: respond
+    agent: ResponseAgent
+    task: "Generate Economic Opportunity brief"
+
+  - name: monitor
+    agent: MonitoringAgent
+    task: "Capture run metrics and audit trail"

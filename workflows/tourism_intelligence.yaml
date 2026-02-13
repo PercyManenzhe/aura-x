@@ -1,0 +1,21 @@
+workflow: tourism_intelligence
+steps:
+  - name: analyze
+    agent: TourismAgent
+    task: "Analyze tourism context for {location} in {season}"
+
+  - name: reasoning
+    agent: ReasoningAgent
+    task: "Reason over visitor preferences, constraints, and seasonal trends"
+
+  - name: recommend
+    agent: RecommendationAgent
+    task: "Recommend attractions and experiences aligned to interests and duration"
+
+  - name: respond
+    agent: ResponseAgent
+    task: "Generate tourism insight report"
+
+  - name: monitor
+    agent: MonitoringAgent
+    task: "Capture run metrics and audit trail"

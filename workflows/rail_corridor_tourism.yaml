@@ -1,0 +1,21 @@
+workflow: rail_corridor_tourism
+steps:
+  - name: analyze
+    agent: TourismAgent
+    task: "Model tourism corridor uplift along {origin} to {destination} rail line"
+
+  - name: reasoning
+    agent: ReasoningAgent
+    task: "Identify station-hub opportunities, safety considerations, and service gaps"
+
+  - name: recommend
+    agent: RecommendationAgent
+    task: "Recommend corridor hubs, cultural nodes, accommodation zones, and investor targets"
+
+  - name: respond
+    agent: ResponseAgent
+    task: "Generate Rail Corridor Tourism intelligence brief"
+
+  - name: monitor
+    agent: MonitoringAgent
+    task: "Capture run metrics and audit trail"

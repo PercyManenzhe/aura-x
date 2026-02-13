@@ -1,5 +1,8 @@
+import os
+from datetime import datetime
 import json
 import argparse
+from unittest import result
 from app.agents.orchestrator import AuraXOrchestrator
 
 WORKFLOW_MAP = {
@@ -7,6 +10,10 @@ WORKFLOW_MAP = {
     "mining": "workflows/mining_safety.yaml",
     "municipal": "workflows/municipal_ops.yaml",
 }
+from app.services.storage_adapter import save_run_local
+
+path = save_run_local(result)
+print(f"\n✅ Saved run output to: {path}")
 
 DEFAULT_INPUTS = {
     "tourism": {
@@ -45,6 +52,20 @@ def main():
 
     orchestrator = AuraXOrchestrator(yaml_path=yaml_path)
     result = orchestrator.run(inputs=inputs)
+              # Save run to /runs folder
+    os.makedirs("runs", exist_ok=True)
+
+    run_id = result.get("run_id", "AX-UNKNOWN")
+    workflow = result.get("workflow", args.workflow)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    filename = f"runs/{workflow}_{run_id}_{ts}.json"
+
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(result, f, indent=2, ensure_ascii=False)
+
+    print(f"\n✅ Saved run output to: {filename}")
+
 
     print(f"\n🧠 Aura-X Output ({args.workflow.upper()}) (JSON):\n")
     print(json.dumps(result, indent=2, ensure_ascii=False))

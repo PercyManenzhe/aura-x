@@ -1,0 +1,108 @@
+{
+  "schema_version": "1.0",
+  "project": "Aura-X",
+  "workflow": "tourism_intelligence",
+  "run_id": "AX-1CAC26ED",
+  "timestamp": "2026-02-02T01:10:39.830582",
+  "inputs": {
+    "location": "Mpumalanga",
+    "season": "All-year",
+    "visitor_type": "General",
+    "budget_level": "mid",
+    "group_type": "family",
+    "duration_days": 3,
+    "interests": [
+      "nature",
+      "culture"
+    ]
+  },
+  "steps": [
+    {
+      "step": "analyze",
+      "agent": "TourismAgent",
+      "task": "Analyze tourism context for Mpumalanga province",
+      "status": "success",
+      "output": "TourismAgent: Completed 'Analyze tourism context for Mpumalanga province'"
+    },
+    {
+      "step": "reasoning",
+      "agent": "ReasoningAgent",
+      "task": "Reason over visitor preferences and seasonal trends",
+      "status": "success",
+      "output": {
+        "agent": "GenericReasoningAgent",
+        "mode": "llm",
+        "task": "Reason over visitor preferences and seasonal trends",
+        "llm_output": "LLM placeholder: OpenAI integration ready. Provide official client code when required."
+      }
+    },
+    {
+      "step": "recommend",
+      "agent": "RecommendationAgent",
+      "task": "Recommend top destinations and experiences",
+      "status": "success",
+      "output": {
+        "agent": "RecommendationAgent",
+        "location": "Mpumalanga",
+        "season": "All-year",
+        "budget_level": "mid",
+        "group_type": "family",
+        "duration_days": 3,
+        "interests": [
+          "nature",
+          "culture"
+        ],
+        "recommendations": [
+          "Kruger National Park – Nature experience",
+          "Blyde River Canyon – Nature experience",
+          "Pilgrim’s Rest – Culture experience",
+          "God’s Window – Nature experience"
+        ]
+      }
+    },
+    {
+      "step": "respond",
+      "agent": "ResponseAgent",
+      "task": "Generate tourism insight report",
+      "status": "success",
+      "output": "ResponseAgent: Completed 'Generate tourism insight report'"
+    }
+  ],
+  "final": {
+    "summary": "Aura-X completed workflow: tourism_intelligence",
+    "top_recommendations": [
+      "Kruger National Park – Nature experience",
+      "Blyde River Canyon – Nature experience",
+      "Pilgrim’s Rest – Culture experience",
+      "God’s Window – Nature experience"
+    ],
+    "suggested_next_actions": [
+      "Add richer inputs for higher personalization",
+      "Enable multilingual output",
+      "Connect to Huawei Cloud storage and logging (OBS/LTS)"
+    ],
+    "monitoring": {
+      "agent": "MonitoringAgent",
+      "task": "Capture run metrics and audit trail",
+      "timestamp": "2026-02-02T01:10:39.830374",
+      "workflow": "tourism_intelligence",
+      "run_id": "AX-1CAC26ED",
+      "total_steps": 4,
+      "failed_steps": 0,
+      "confidence_score": 0.81,
+      "notes": [
+        "Ready for Huawei LTS log shipping",
+        "Ready for OBS run archive (JSON)",
+        "Ready for Cloud Eye metrics (future)"
+      ]
+    }
+  },
+  "confidence": {
+    "score": 0.81,
+    "rationale": [
+      "Workflow executed end-to-end without errors",
+      "Recommendations aligned to user inputs where provided",
+      "Personalization inputs provided: 7"
+    ]
+  }
+}

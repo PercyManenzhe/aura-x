@@ -1,0 +1,21 @@
+workflow: tourism_safety_health
+steps:
+  - name: analyze
+    agent: TourismAgent
+    task: "Identify safety zones, health-ready areas, and risk flags for {location}"
+
+  - name: reasoning
+    agent: ReasoningAgent
+    task: "Generate safety/health advisories for {group_type} and {visitor_type}"
+
+  - name: recommend
+    agent: RecommendationAgent
+    task: "Recommend safer routes, hours, and nearby medical support"
+
+  - name: respond
+    agent: ResponseAgent
+    task: "Produce Safety & Healthy Zones briefing"
+
+  - name: monitor
+    agent: MonitoringAgent
+    task: "Capture run metrics and audit trail"
