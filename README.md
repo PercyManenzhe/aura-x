@@ -33,3 +33,8 @@ aura-x/
 ├── requirements.txt # Dependencies
 └── README.md
 
+## System Architecture
+![Aura-X Architecture](assets/diagrams/architecture/aura-x-system-architecture.png)
+
+## Workflow Orchestration
+![Tourism Workflow](assets/diagrams/workflows/tourism-workflow.png)
