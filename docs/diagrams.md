@@ -1,3 +1,14 @@
+## 🏗 System Design Philosophy
+
+Aura-X follows a modular, YAML-driven, multi-agent architecture.
+
+Design principles:
+- Workflow-driven orchestration
+- Agent specialization per domain
+- Provider-agnostic LLM integration
+- Structured outputs for auditability
+- Cloud-native deployment readiness (Huawei Cloud)
+
 # Aura-X Diagrams
 
 These diagrams explain the **architecture**, **data-flow**, and **workflows** for Aura-X.
