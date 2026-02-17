@@ -9,7 +9,7 @@ These diagrams explain the **architecture**, **data-flow**, and **workflows** fo
 
 ## 1) System Architecture (High-Level)
 
-```mermaid
+
 flowchart TB
   subgraph Users["Users & Stakeholders"]
     U1["Tourist / Citizen / Mine Supervisor"]
@@ -28,18 +28,9 @@ flowchart TB
 
   subgraph Core["Aura-X Core"]
     ORCH["AuraXOrchestrator (YAML workflow engine)"]
-    YAML["Workflows YAML:
-- tourism_intelligence.yaml
-- mining_safety.yaml
-- municipal_ops.yaml
-- tourism_* clusters
-- rail_corridor_tourism.yaml"]
-    AGENTS["Agents:
-Tourism / Mining / Municipal
-Reasoning / Recommend / Response
-Monitoring"]
-    LLM["LLM Adapter (optional):
-OpenAI now -> Huawei later"]
+    YAML["Workflows YAML<br/>- tourism_intelligence.yaml<br/>- mining_safety.yaml<br/>- municipal_ops.yaml<br/>- tourism_* clusters<br/>- rail_corridor_tourism.yaml"]
+    AGENTS["Agents<br/>Tourism / Mining / Municipal<br/>Reasoning / Recommend / Response<br/>Monitoring"]
+    LLM["LLM Adapter (optional)<br/>OpenAI now → Huawei later"]
   end
 
   subgraph Outputs["Outputs"]
@@ -75,28 +66,8 @@ OpenAI now -> Huawei later"]
 
 
 
-flowchart LR
-  A["Analyze (TourismAgent)"] --> B["Reason (ReasoningAgent)"]
-  B --> C["Recommend (RecommendationAgent)"]
-  C --> D["Respond (ResponseAgent)"]
-  D --> E["Monitor (MonitoringAgent)"]
 
 
-
-
-flowchart LR
-  A["Analyze (MiningSafetyAgent)"] --> B["Reason (ReasoningAgent)"]
-  B --> C["Recommend (MiningRecommendationAgent)"]
-  C --> D["Respond (ResponseAgent)"]
-  D --> E["Monitor (MonitoringAgent)"]
-
-
-
-flowchart LR
-  A["Analyze (MunicipalOpsAgent)"] --> B["Reason (ReasoningAgent)"]
-  B --> C["Recommend (MunicipalRecommendationAgent)"]
-  C --> D["Respond (ResponseAgent)"]
-  D --> E["Monitor (MonitoringAgent)"]
 
 
 
