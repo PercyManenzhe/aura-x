@@ -2,11 +2,14 @@
 
 These diagrams explain the **architecture**, **data-flow**, and **workflows** for Aura-X.
 
+## 📐 Architecture & Workflows
+👉 See full system diagrams here: [docs/diagrams.md](docs/diagrams.md)
+
 ---
 
 ## 1) System Architecture (High-Level)
 
-```mermaid
+
 flowchart TB
   subgraph Users["Users & Stakeholders"]
     U1["Tourist / Citizen / Mine Supervisor"]
@@ -25,9 +28,9 @@ flowchart TB
 
   subgraph Core["Aura-X Core"]
     ORCH["AuraXOrchestrator (YAML workflow engine)"]
-    YAML["Workflows YAML\n- tourism_intelligence.yaml\n- mining_safety.yaml\n- municipal_ops.yaml\n- tourism_* clusters\n- rail_corridor_tourism.yaml"]
-    AGENTS["Agents\nTourism / Mining / Municipal\nReasoning / Recommend / Response\nMonitoring"]
-    LLM["LLM Adapter (optional)\nOpenAI now → Huawei later"]
+    YAML["Workflows YAML<br/>- tourism_intelligence.yaml<br/>- mining_safety.yaml<br/>- municipal_ops.yaml<br/>- tourism_* clusters<br/>- rail_corridor_tourism.yaml"]
+    AGENTS["Agents<br/>Tourism / Mining / Municipal<br/>Reasoning / Recommend / Response<br/>Monitoring"]
+    LLM["LLM Adapter (optional)<br/>OpenAI now → Huawei later"]
   end
 
   subgraph Outputs["Outputs"]
@@ -58,32 +61,6 @@ flowchart TB
   API -.metrics.-> CloudEye
   Huawei -.secure.-> IAM
 
-
-
-sequenceDiagram
-  autonumber
-  participant User as User
-  participant API as FastAPI
-  participant Orchestrator as Orchestrator
-  participant Agents as Agents
-  participant LLM as LLM_Adapter
-  participant Runs as Runs_JSON
-  participant Huawei as Huawei_Cloud
-
-  User->>API: POST /run (workflow + inputs)
-  API->>Orchestrator: run(inputs)
-  Orchestrator->>Agents: Execute YAML steps in order
-
-  Agents->>LLM: call_openai() [optional]
-  LLM-->>Agents: reasoning / structured hints
-
-  Agents-->>Orchestrator: step outputs
-  Orchestrator-->>API: structured JSON output
-  API-->>User: response JSON
-
-  Orchestrator->>Runs: save JSON run artifact
-  Runs-->>Huawei: (future) sync to OBS
-  API-->>Huawei: (future) logs to LTS + metrics to CloudEye
 
 
 flowchart LR
