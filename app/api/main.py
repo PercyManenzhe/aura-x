@@ -20,11 +20,17 @@ workflow_map = {
 
     # Strategic infrastructure
     "rail_corridor_tourism": "workflows/rail_corridor_tourism.yaml",
+
+    # Municipal & Eskom operations
+    "municipal_smart_city": "workflows/municipal_smart_city.yaml",
+
 }
 
 
 class RunRequest(BaseModel):
     workflow: Optional[str] = "tourism"
+
+    # existing tourism fields...
     location: Optional[str] = "Mpumalanga"
     season: Optional[str] = "All-year"
     visitor_type: Optional[str] = "General"
@@ -32,6 +38,19 @@ class RunRequest(BaseModel):
     group_type: Optional[str] = "general"
     duration_days: Optional[int] = 2
     interests: Optional[List[str]] = ["nature"]
+
+    # municipal & Eskom pack fields
+    municipality: Optional[str] = None
+    ward: Optional[str] = None
+    service: Optional[str] = None  # streetlights | electricity | water | waste
+    asset_type: Optional[str] = None  # smart_meter | high_mast | pump_station
+    asset_id: Optional[str] = None
+    issue: Optional[str] = None  # outage | leak | tamper | no_signal
+    gps: Optional[Dict[str, float]] = None  # {"lat":..., "lon":...}
+    sensor_status: Optional[str] = None  # online | offline | intermittent
+    last_seen: Optional[str] = None
+    weather_hint: Optional[str] = None
+
     extra: Optional[Dict[str, Any]] = None
 
 

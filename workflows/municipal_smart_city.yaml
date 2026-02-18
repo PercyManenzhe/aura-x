@@ -1,0 +1,22 @@
+workflow: municipal_smart_city_intelligence
+
+steps:
+  - name: analyze
+    agent: MunicipalOpsAgent
+    task: "Analyze smart city signals: electricity, water, waste, citizen reports, weather, location"
+
+  - name: reasoning
+    agent: ReasoningAgent
+    task: "Correlate outages, detect probable root cause, and prioritize by impact + risk"
+
+  - name: recommend
+    agent: MunicipalRecommendationAgent
+    task: "Recommend actions: dispatch plan, SLA escalation, citizen updates, and prevention measures"
+
+  - name: respond
+    agent: ResponseAgent
+    task: "Generate municipal intelligence brief for ops team + citizen communication"
+
+  - name: monitor
+    agent: MonitoringAgent
+    task: "Capture run metrics, audit trail, and readiness for Huawei LTS/OBS/Cloud Eye"
