@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Literal, Union
 
 from app.agents.orchestrator import AuraXOrchestrator
 
@@ -26,12 +26,10 @@ workflow_map = {
 
 }
 
+# --- input schemas per workflow -------------------------------------------------
 
-class RunRequest(BaseModel):
-    workflow: Optional[str] = "tourism"
-
-    # existing tourism fields...
-    location: Optional[str] = "Mpumalanga"
+class TourismInputs(BaseModel):
+    location: str
     season: Optional[str] = "All-year"
     visitor_type: Optional[str] = "General"
     budget_level: Optional[str] = "mid"
@@ -39,19 +37,37 @@ class RunRequest(BaseModel):
     duration_days: Optional[int] = 2
     interests: Optional[List[str]] = ["nature"]
 
-    # municipal & Eskom pack fields
-    municipality: Optional[str] = None
+
+class MiningInputs(BaseModel):
+    site: str
+    hazards: List[str]
+    incident_type: Optional[str] = "near_miss"
+    shift: Optional[str] = "day"
+    compliance_focus: Optional[List[str]] = []
+
+
+class GPS(BaseModel):
+    lat: float
+    lon: float
+
+
+class MunicipalInputs(BaseModel):
+    municipality: str
     ward: Optional[str] = None
-    service: Optional[str] = None  # streetlights | electricity | water | waste
-    asset_type: Optional[str] = None  # smart_meter | high_mast | pump_station
+    service: str
+    asset_type: Optional[str] = None
     asset_id: Optional[str] = None
-    issue: Optional[str] = None  # outage | leak | tamper | no_signal
-    gps: Optional[Dict[str, float]] = None  # {"lat":..., "lon":...}
-    sensor_status: Optional[str] = None  # online | offline | intermittent
+    issue: Optional[str] = None
+    gps: Optional[GPS] = None
+    sensor_status: Optional[str] = None
     last_seen: Optional[str] = None
     weather_hint: Optional[str] = None
 
-    extra: Optional[Dict[str, Any]] = None
+
+class RunRequest(BaseModel):
+    workflow: Literal["tourism", "mining", "municipal"]
+    inputs: Union[TourismInputs, MiningInputs, MunicipalInputs]
+
 
 
 @app.get("/")
@@ -66,13 +82,31 @@ def health():
 
 @app.post("/run")
 def run_aura_x(req: RunRequest):
-    inputs = req.model_dump(exclude={"workflow"})
-    # keep extra optional, but merge if provided
-    extra = inputs.pop("extra", None) or {}
-    inputs.update(extra)
+    # req.inputs is already validated as one of the workflow models
+    raw_inputs = req.inputs
+
+    # convert input model to plain dict (Union members are BaseModel subclasses)
+    if isinstance(raw_inputs, BaseModel):
+        validated = raw_inputs.model_dump()
+    else:
+        validated = dict(raw_inputs)
+
+    # --- filter out null/placeholder values ---
+    def _clean(v):
+        if v is None:
+            return False
+        if isinstance(v, str) and v.strip().lower() == "string":
+            return False
+        if isinstance(v, (list, dict)) and not v:
+            return False
+        return True
+
+    cleaned_inputs = {k: v for k, v in validated.items() if _clean(v)}
 
     # select workflow-specific yaml and create orchestrator per request
     yaml_path = workflow_map.get(req.workflow, "config.yaml")
     orchestrator = AuraXOrchestrator(yaml_path=yaml_path)
-    result = orchestrator.run(inputs=inputs)
+    result = orchestrator.run(inputs=cleaned_inputs)
     return result
+
+
