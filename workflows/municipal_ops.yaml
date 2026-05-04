@@ -1,20 +1,35 @@
 workflow: municipal_operations_intelligence
+
 steps:
   - name: analyze
     agent: MunicipalOpsAgent
-    task: Analyze municipal service delivery context
+    task: Analyze municipal signals (water, electricity, roads, waste, weather, institutions) with South African context
 
   - name: reasoning
-    agent: ReasoningAgent
-    task: Identify bottlenecks and prioritize interventions
+    agent: MunicipalReasoningAgent
+    task: Correlate issues, identify root causes, assess community impact, and determine risk levels
+
+  - name: decision
+    agent: MunicipalDecisionAgent
+    task: Prioritize interventions based on urgency, risk, and service delivery impact
 
   - name: recommend
     agent: MunicipalRecommendationAgent
-    task: Recommend actions to improve service delivery
+    task: Generate actionable intervention plan with timelines and resource considerations
+
+  - name: safety
+    agent: MunicipalSafetyAgent
+    task: Evaluate safety risks (public, infrastructure, environmental) and propose mitigation measures
 
   - name: respond
-    agent: ResponseAgent
-    task: Generate municipal insight report
+    agent: MunicipalResponseAgent
+    task: Generate structured municipal intelligence report for operations, leadership, and citizen communication
 
+  - name: monitor
+    agent: MunicipalMonitoringAgent
+    task: Capture execution metrics, audit trail, and system performance
 
-    notes: This workflow focuses on enhancing municipal operations through analysis, reasoning, recommendations, reporting, and monitoring.
+notes: >
+  This workflow enables real-time municipal intelligence by analyzing service delivery issues,
+  assessing risks, prioritizing interventions, and generating actionable insights tailored
+  to South African municipal environments (rural, township, urban, and metro).

@@ -2,27 +2,32 @@
 
 
 # app/agents/orchestrator.py
+
 import yaml
 from datetime import datetime
 import uuid
 
 
-from app.agents.monitoring_agent import MonitoringAgent
-from app.agents.tourism_agent import TourismAgent
-from app.agents.decision_agent import DecisionAgent
-from app.agents.response_agent import ResponseAgent
-from app.agents.reasoning_agent import GenericReasoningAgent
-from app.agents.recommendation_agent import RecommendationAgent
-from app.agents.mining_safety_agent import MiningSafetyAgent
-from app.agents.mining_recommendation_agent import MiningRecommendationAgent
-from app.agents.municipal_ops_agent import MunicipalOpsAgent
-from app.agents.municipal_recommendation_agent import MunicipalRecommendationAgent
+# --- Import ALL agents (modular) ---
+from app.agents.core.monitoring_agent import MonitoringAgent
 
+# Municipal
+from app.agents.municipal.municipal_ops_agent import MunicipalOpsAgent
+from app.agents.municipal.municipal_reasoning_agent import MunicipalReasoningAgent
+from app.agents.municipal.municipal_recommendation_agent import MunicipalRecommendationAgent
+from app.agents.municipal.municipal_response_agent import MunicipalResponseAgent
+from app.agents.municipal.municipal_decision_agent import MunicipalDecisionAgent
+from app.agents.municipal.municipal_safety_agent import MunicipalSafetyAgent
+from app.agents.municipal.municipal_monitoring_agent import MunicipalMonitoringAgent
+
+# Mining (example)
+from app.agents.mining.mining_safety_agent import MiningSafetyAgent
+from app.agents.mining.mining_recommendation_agent import MiningRecommendationAgent
 
 
 def build_workflow_output(workflow_name, run_id, inputs, step_results, final_summary, confidence):
     return {
-        "schema_version": "1.0",
+        "schema_version": "2.0",
         "project": "Aura-X",
         "workflow": workflow_name,
         "run_id": run_id,
@@ -34,56 +39,28 @@ def build_workflow_output(workflow_name, run_id, inputs, step_results, final_sum
     }
 
 
-
 class AuraXOrchestrator:
-    def __init__(self, yaml_path="config.yaml"):
-        self.yaml_path = yaml_path
+    def __init__(self, yaml_path):
         self.workflow = self.load_workflow(yaml_path)
 
+        # 🔥 CLEAN modular agent registry
         self.agent_map = {
-            "TourismAgent": TourismAgent(),
-            "DecisionAgent": DecisionAgent(),
-            "ResponseAgent": ResponseAgent(),
-            "ReasoningAgent": GenericReasoningAgent(),
-            "RecommendationAgent": RecommendationAgent(),
+            # --- Core ---
             "MonitoringAgent": MonitoringAgent(),
 
+            # --- Municipal ---
+            "MunicipalOpsAgent": MunicipalOpsAgent(),
+            "MunicipalReasoningAgent": MunicipalReasoningAgent(),
+            "MunicipalDecisionAgent": MunicipalDecisionAgent(),
+            "MunicipalRecommendationAgent": MunicipalRecommendationAgent(),
+            "MunicipalSafetyAgent": MunicipalSafetyAgent(),
+            "MunicipalResponseAgent": MunicipalResponseAgent(),
+            "MunicipalMonitoringAgent": MunicipalMonitoringAgent(),
+
+            # --- Mining ---
             "MiningSafetyAgent": MiningSafetyAgent(),
             "MiningRecommendationAgent": MiningRecommendationAgent(),
-
-            "MunicipalOpsAgent": MunicipalOpsAgent(),
-            "MunicipalRecommendationAgent": MunicipalRecommendationAgent(),
         }
-
-
-    def main():
-        orchestrator = AuraXOrchestrator(yaml_path="workflows/mining_safety.yaml")
-        result = orchestrator.run(inputs={
-            "site": "Underground Section A",
-            "hazards": ["poor ventilation", "slippery walkway"],
-            "incident_type": "near_miss",
-            "shift": "night",
-            "compliance_focus": ["PPE", "ventilation", "emergency_response"],
-        })
-        print("\n🧠 Aura-X Mining Output:\n")
-        print(result)
-    
-        # Example second run (municipal) — keeps variable scoped separately
-        orchestrator2 = AuraXOrchestrator(yaml_path="workflows/municipal_ops.yaml")
-        result2 = orchestrator2.run(inputs={
-            "municipality": "Example Local Municipality",
-            "service": "streetlights",
-            "issue": "outage",
-            "area": "Ward 12",
-            "priority": "high",
-            "constraints": ["limited budget", "cable theft risk"],
-        })
-        print("\n🧠 Aura-X Municipal Output:\n")
-        print(result2)
-    
-    if __name__ == "__main__":
-        main()
-
 
     def load_workflow(self, path):
         with open(path, "r") as f:
@@ -92,7 +69,6 @@ class AuraXOrchestrator:
     def run(self, inputs=None):
         inputs = inputs or {}
 
-        # One run_id per execution (DO NOT generate inside loop)
         run_id = f"AX-{uuid.uuid4().hex[:8].upper()}"
         workflow_name = self.workflow.get("workflow", "unknown")
 
@@ -104,33 +80,23 @@ class AuraXOrchestrator:
 
         ordered_steps = []
 
-        # Execute each step defined in YAML (skip MonitoringAgent if present)
         for step in self.workflow["steps"]:
             step_name = step["name"]
             agent_name = step["agent"]
             task = step["task"]
 
-            # Skip monitor if you accidentally left it in YAML
-            if agent_name == "MonitoringAgent" or step_name == "monitor":
-                continue
-
             agent = self.agent_map.get(agent_name)
 
-            if agent:
-                if agent_name in [
-                    "ReasoningAgent",
-                    "RecommendationAgent",
-                    "MiningRecommendationAgent",
-                    "MunicipalRecommendationAgent",
-                ]:
-                    output = agent.run(task, step_context)
-                else:
-                    output = agent.run(task)
-
-                status = "success"
-            else:
+            if not agent:
                 output = f"Agent {agent_name} not found"
                 status = "error"
+            else:
+                try:
+                    output = agent.run(task, step_context)
+                    status = "success"
+                except Exception as e:
+                    output = str(e)
+                    status = "error"
 
             step_record = {
                 "step": step_name,
@@ -145,27 +111,31 @@ class AuraXOrchestrator:
 
             print(f"{step_name.upper()}: {output}")
 
-        # ---- Confidence scoring (simple + explainable) ----
+        # ---- Confidence ----
         input_count = len(inputs.keys())
-        score = 0.60 + min(0.30, input_count * 0.03)
+        score = 0.65 + min(0.25, input_count * 0.03)
 
         errors = [s for s in ordered_steps if s["status"] == "error"]
         if errors:
-            score = max(0.40, score - 0.20)
+            score -= 0.2
 
         confidence = {
-            "score": round(score, 2),
-            "rationale": [
-                "Workflow executed end-to-end without errors"
-                if not errors else "Workflow completed with missing agent(s)",
-                "Recommendations aligned to user inputs where provided",
-                f"Personalization inputs provided: {input_count}",
-            ],
+            "score": round(max(0.4, score), 2),
+            "notes": [
+                "Workflow executed",
+                f"Inputs provided: {input_count}",
+                "Errors detected" if errors else "No errors detected"
+            ]
         }
 
-        # ---- Monitoring (run AFTER loop so it sees steps + confidence) ----
-        monitoring = self.agent_map["MonitoringAgent"].run(
-            "Capture run metrics and audit trail",
+        # ---- Monitoring (AUTO DETECT DOMAIN) ----
+        monitoring_agent_name = next(
+            (s["agent"] for s in self.workflow["steps"] if "MonitoringAgent" in s["agent"]),
+            "MonitoringAgent"
+        )
+
+        monitoring = self.agent_map[monitoring_agent_name].run(
+            "Capture metrics",
             {
                 "workflow": workflow_name,
                 "run_id": run_id,
@@ -176,27 +146,18 @@ class AuraXOrchestrator:
 
         print(f"MONITOR: {monitoring}")
 
-        # ---- Summary ----
         final_summary = {
             "summary": f"Aura-X completed workflow: {workflow_name}",
-            "top_recommendations": (
-                step_context.get("recommend", {}).get("recommendations", [])
-                if isinstance(step_context.get("recommend"), dict)
-                else []
-            ),
-            "suggested_next_actions": [
-                "Add richer inputs for higher personalization",
-                "Enable multilingual output",
-                "Connect to Huawei Cloud storage and logging (OBS/LTS)",
-            ],
-            "monitoring": monitoring,  
+            "top_actions": step_context.get("recommend", {}).get("recommendations", []),
+            "decision": step_context.get("decision", {}),
+            "monitoring": monitoring,
         }
 
         return build_workflow_output(
-            workflow_name=workflow_name,
-            run_id=run_id,
-            inputs=inputs,
-            step_results=ordered_steps,
-            final_summary=final_summary,
-            confidence=confidence,
+            workflow_name,
+            run_id,
+            inputs,
+            ordered_steps,
+            final_summary,
+            confidence
         )

@@ -3,20 +3,20 @@ workflow: municipal_smart_city_intelligence
 steps:
   - name: analyze
     agent: MunicipalOpsAgent
-    task: "Analyze smart city signals: electricity, water, waste, citizen reports, weather, location"
+    task: "Analyze municipal signals (electricity, water, roads, waste, weather, institutions) with South African context"
 
   - name: reasoning
     agent: ReasoningAgent
-    task: "Correlate outages, detect probable root cause, and prioritize by impact + risk"
+    task: "Correlate outages, detect root causes, assess impact on communities, and prioritize by risk"
 
   - name: recommend
     agent: MunicipalRecommendationAgent
-    task: "Recommend actions: dispatch plan, SLA escalation, citizen updates, and prevention measures"
+    task: "Generate actionable municipal interventions with timelines and community impact focus"
 
   - name: respond
     agent: ResponseAgent
-    task: "Generate municipal intelligence brief for ops team + citizen communication"
+    task: "Generate structured municipal intelligence report for operations and leadership"
 
   - name: monitor
     agent: MonitoringAgent
-    task: "Capture run metrics, audit trail, and readiness for Huawei LTS/OBS/Cloud Eye"
+    task: "Capture run metrics and audit trail"
