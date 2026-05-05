@@ -1,0 +1,100 @@
+aura-x/
+│
+├── app/
+│   │
+│   ├── orchestrators/
+│   │   ├── orchestrator.py
+│   │   ├── workflow_engine.py
+│   │   ├── state_manager.py
+│   │
+│   ├── core/
+│   │   ├── unified_city_state.py          # ⭐ CENTRAL DATA MODEL (next step)
+│   │   ├── risk_engine.py                # ⭐ (Option C)
+│   │   ├── decision_engine.py
+│   │   ├── simulation_engine.py
+│   │   ├── prediction_engine.py
+│   │
+│   ├── agents/
+│   │   ├── base_agent.py
+│   │   ├── municipal/
+│   │   │   ├── ops_agent.py
+│   │   │   ├── reasoning_agent.py
+│   │   │   ├── decision_agent.py
+│   │   │   ├── recommendation_agent.py
+│   │   │   ├── safety_agent.py
+│   │   │   ├── response_agent.py
+│   │   │   ├── monitoring_agent.py
+│   │   │
+│   │   ├── risk/
+│   │   │   ├── flood_agent.py
+│   │   │   ├── fire_agent.py
+│   │   │   ├── crime_agent.py
+│   │   │   ├── infrastructure_agent.py
+│   │
+│   ├── intelligence/
+│   │   ├── risk_models/
+│   │   │   ├── base_risk_model.py
+│   │   │   ├── electricity_risk.py
+│   │   │   ├── water_risk.py
+│   │   │   ├── flood_risk.py
+│   │   │
+│   │   ├── forecasting/
+│   │   │   ├── outage_forecast.py
+│   │   │   ├── flood_forecast.py
+│   │   │   ├── crime_forecast.py
+│   │
+│   ├── geospatial/
+│   │   ├── gis_engine.py
+│   │   ├── ward_mapper.py
+│   │   ├── heatmap_generator.py
+│   │
+│   ├── data/
+│   │   ├── connectors/
+│   │   │   ├── weather_api.py
+│   │   │   ├── municipality_api.py
+│   │   │   ├── eskom_api.py
+│   │   │
+│   │   ├── ingestion/
+│   │   │   ├── event_stream.py
+│   │   │   ├── citizen_reports.py
+│   │
+│   ├── communication/
+│   │   ├── citizen_alerts.py
+│   │   ├── sms_gateway.py
+│   │   ├── whatsapp_bot.py
+│   │
+│   ├── dashboard/
+│   │   ├── api.py
+│   │   ├── analytics.py
+│   │
+│   ├── utils/
+│   │   ├── logger.py
+│   │   ├── config.py
+│   │   ├── helpers.py
+│   │
+│   └── api/
+│       ├── routes.py
+│       ├── main.py
+│
+├── tests/
+│   ├── test_agents.py
+│   ├── test_risk_engine.py
+│   ├── test_orchestrator.py
+│
+├── configs/
+│   ├── settings.yaml
+│   ├── risk_weights.yaml
+│   ├── city_profiles.yaml
+│
+├── docs/
+│   ├── architecture.md
+│   ├── africa_use_cases.md
+│   ├── system_flow.md
+│
+├── scripts/
+│   ├── run_local.py
+│   ├── simulate_scenarios.py
+│
+├── requirements.txt
+├── README.md
+└── .env
