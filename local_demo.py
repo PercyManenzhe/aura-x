@@ -2,7 +2,7 @@
 
 
 # instantiate orchestrator before use
-from app.agents.orchestrator import AuraXOrchestrator
+from app.orchestrators.orchestrator import AuraXOrchestrator
 import json
 
 def main():

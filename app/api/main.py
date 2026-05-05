@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any, Literal, Union
 
-from app.agents.orchestrator import AuraXOrchestrator
+from app.orchestrators.orchestrator import AuraXOrchestrator
 
 app = FastAPI(title="Aura-X API", version="1.0")
 

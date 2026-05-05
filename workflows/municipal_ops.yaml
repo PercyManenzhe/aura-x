@@ -25,10 +25,6 @@ steps:
     agent: MunicipalResponseAgent
     task: Generate structured municipal intelligence report for operations, leadership, and citizen communication
 
-  - name: monitor
-    agent: MunicipalMonitoringAgent
-    task: Capture execution metrics, audit trail, and system performance
-
 notes: >
   This workflow enables real-time municipal intelligence by analyzing service delivery issues,
   assessing risks, prioritizing interventions, and generating actionable insights tailored

@@ -1,4 +1,4 @@
-from app.agents.orchestrator import AuraXOrchestrator
+from app.orchestrators.orchestrator import AuraXOrchestrator
 
 def build_workflow_output(workflow_name, inputs, step_results, final_summary, confidence):
     """

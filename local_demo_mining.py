@@ -1,6 +1,6 @@
 import json
 
-from app.agents.orchestrator import AuraXOrchestrator
+from app.orchestrators.orchestrator import AuraXOrchestrator
 
 def main():
     orchestrator = AuraXOrchestrator(yaml_path="workflows/mining_safety.yaml")

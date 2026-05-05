@@ -3,7 +3,7 @@ from datetime import datetime
 import json
 import argparse
 from unittest import result
-from app.agents.orchestrator import AuraXOrchestrator
+from app.orchestrators.orchestrator import AuraXOrchestrator
 
 WORKFLOW_MAP = {
     "tourism": "config.yaml",
