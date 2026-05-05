@@ -9,10 +9,10 @@ from datetime import datetime
 @dataclass
 class LocationContext:
     country: str = "South Africa"
-    province: str = ""              #  CORE LAYER
+    province: str = ""              # CORE INTELLIGENCE UNIT (NOT STATE)
     municipality: str = ""
     ward: Optional[str] = None
-    area_type: str = "township"     # informal_settlement, urban, rural
+    area_type: str = "township"     # township, urban, rural, informal_settlement
 
 
 # ---------------------------
@@ -21,6 +21,7 @@ class LocationContext:
 @dataclass
 class EnvironmentalState:
     weather: str = "normal"
+    weather_risk: str = "low"       # ADDED for Risk Engine compatibility
     rainfall_level: str = "low"
     flood_risk: str = "low"
     temperature: Optional[float] = None
@@ -37,9 +38,12 @@ class InfrastructureState:
     roads: str = "stable"
     telecoms: str = "stable"
 
+    # ADDED: global intelligence compatibility
+    infrastructure_status: str = "stable"
+
 
 # ---------------------------
-# RISK SIGNALS (CORE INTELLIGENCE INPUT)
+# RISK SIGNALS (CORE INPUT LAYER)
 # ---------------------------
 @dataclass
 class RiskSignals:
@@ -60,7 +64,7 @@ class EventLog:
 
 
 # ---------------------------
-# AURA-X PROVINCE INTELLIGENCE CORE
+# AURA-X CORE INTELLIGENCE BRAIN
 # ---------------------------
 @dataclass
 class UnifiedProvinceIntelligence:
@@ -68,27 +72,49 @@ class UnifiedProvinceIntelligence:
     # Identity layer
     location: LocationContext
 
-    # System state
+    # Environment layer
     environment: EnvironmentalState = field(default_factory=EnvironmentalState)
+
+    # Infrastructure layer
     infrastructure: InfrastructureState = field(default_factory=InfrastructureState)
+
+    # Risk signals layer
     risks: RiskSignals = field(default_factory=RiskSignals)
 
-    # Dynamic context
+    # Population intelligence
     population_density: str = "medium"
+
+    # Service intelligence
+    service_area: str = ""
+    service_failures: List[str] = field(default_factory=list)
+
+    # Operational context
     active_issues: List[str] = field(default_factory=list)
 
-    # Metadata
+    # AI Memory layer
+    event_log: List[EventLog] = field(default_factory=list)
+
+    # Computed intelligence (from Risk Engine)
+    risk_score: float = 0.0
+    risk_level: str = "LOW"
+    risk_signals: List[str] = field(default_factory=list)
+
+    # Early warning system
+    early_warning_triggered: bool = False
+    emergency_flag: bool = False
+
+    # System metadata
     timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
     confidence: float = 1.0
 
-    # Memory layer
-    event_log: List[EventLog] = field(default_factory=list)
 
-    # Computed intelligence
-    risk_score: float = 0.0
+
+
+
+
 
     # ---------------------------
-    # CORE METHODS
+    # CORE METHODS (INTELLIGENCE LAYER)
     # ---------------------------
 
     def add_event(self, event_type: str, description: str):
@@ -108,6 +134,19 @@ class UnifiedProvinceIntelligence:
         self.active_issues.append(issue)
         self.add_event("new_issue", issue)
 
+    # Risk Engine integration hook
+    def apply_risk_engine(self, score: float, level: str, signals: List[str]):
+        self.risk_score = score
+        self.risk_level = level
+        self.risk_signals = signals
+
+        if level in ["HIGH", "CRITICAL"]:
+            self.early_warning_triggered = True
+            self.emergency_flag = True
+
+        self.add_event("risk_update", f"Risk={level}, Score={score}")
+
+    # 📊 FULL SYSTEM SUMMARY
     def summary(self) -> Dict[str, Any]:
         return {
             "location": self.location.__dict__,
@@ -115,8 +154,13 @@ class UnifiedProvinceIntelligence:
             "infrastructure": self.infrastructure.__dict__,
             "risks": self.risks.__dict__,
             "risk_score": self.risk_score,
+            "risk_level": self.risk_level,
+            "risk_signals": self.risk_signals,
             "active_issues": self.active_issues,
+            "service_failures": self.service_failures,
             "event_count": len(self.event_log),
+            "early_warning": self.early_warning_triggered,
+            "emergency": self.emergency_flag,
             "timestamp": self.timestamp,
             "confidence": self.confidence
         }
