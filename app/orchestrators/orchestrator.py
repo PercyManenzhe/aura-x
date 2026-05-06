@@ -1,28 +1,31 @@
 import yaml
-from datetime import datetime
+
 import uuid
+from datetime import datetime, timezone
 
-# ---------------- CORE ----------------
-from ..agents.core.monitoring_agent import MonitoringAgent as CoreMonitoringAgent
+# ================= CORE =================
+from ..core.unified_province_intelligence import UnifiedProvinceIntelligence
+from ..core.risk_engine import RiskEngine
+from ..core.location_context import LocationContext
 
-# ---------------- MUNICIPAL ----------------
-from app.agents.municipal.municipal_ops_agent import MunicipalOpsAgent
-from app.agents.municipal.municipal_reasoning_agent import MunicipalReasoningAgent
-from app.agents.municipal.municipal_recommendation_agent import MunicipalRecommendationAgent
-from app.agents.municipal.municipal_response_agent import MunicipalResponseAgent
-from app.agents.municipal.municipal_decision_agent import MunicipalDecisionAgent
-from app.agents.municipal.municipal_safety_agent import MunicipalSafetyAgent
-from app.agents.municipal.municipal_monitoring_agent import MunicipalMonitoringAgent
+# ================= MUNICIPAL =================
+from ..agents.municipal.municipal_ops_agent import MunicipalOpsAgent
+from ..agents.municipal.municipal_reasoning_agent import MunicipalReasoningAgent
+from ..agents.municipal.municipal_recommendation_agent import MunicipalRecommendationAgent
+from ..agents.municipal.municipal_response_agent import MunicipalResponseAgent
+from ..agents.municipal.municipal_decision_agent import MunicipalDecisionAgent
+from ..agents.municipal.municipal_safety_agent import MunicipalSafetyAgent
+from ..agents.municipal.municipal_monitoring_agent import MunicipalMonitoringAgent
 
-# ---------------- MINING ----------------
-from app.agents.mining.mining_safety_agent import MiningSafetyAgent
-from app.agents.mining.mining_recommendation_agent import MiningRecommendationAgent
+# ================= MINING =================
+from ..agents.mining.mining_safety_agent import MiningSafetyAgent
+from ..agents.mining.mining_recommendation_agent import MiningRecommendationAgent
 
-# --------------- TOURISM ----------------
-from app.agents.tourism.tourism_safety_agent import TourismSafetyAgent
-from app.agents.tourism.tourism_recommendation_agent import TourismRecommendationAgent
+# ================= TOURISM =================
+from ..agents.tourism.tourism_safety_agent import TourismSafetyAgent
+from ..agents.tourism.tourism_recommendation_agent import TourismRecommendationAgent
 
-
+# ...existing code...
 # =========================================================
 # OUTPUT BUILDER
 # =========================================================
@@ -32,7 +35,7 @@ def build_workflow_output(workflow_name, run_id, inputs, steps, final, confidenc
         "project": "Aura-X",
         "workflow": workflow_name,
         "run_id": run_id,
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "inputs": inputs,
         "steps": steps,
         "final": final,
@@ -47,11 +50,7 @@ class AuraXOrchestrator:
     def __init__(self, yaml_path):
         self.workflow = self.load_workflow(yaml_path)
 
-        # SAFE AGENT REGISTRY (NO BREAKS IF MISSING)
         self.agent_map = {
-            # Core
-            "MonitoringAgent": CoreMonitoringAgent(),
-
             # Municipal
             "MunicipalOpsAgent": MunicipalOpsAgent(),
             "MunicipalReasoningAgent": MunicipalReasoningAgent(),
@@ -64,6 +63,10 @@ class AuraXOrchestrator:
             # Mining
             "MiningSafetyAgent": MiningSafetyAgent(),
             "MiningRecommendationAgent": MiningRecommendationAgent(),
+
+            # Tourism
+            "TourismSafetyAgent": TourismSafetyAgent(),
+            "TourismRecommendationAgent": TourismRecommendationAgent(),
         }
 
     # -----------------------------------------------------
@@ -72,140 +75,130 @@ class AuraXOrchestrator:
             return yaml.safe_load(f)
 
     # -----------------------------------------------------
+    def initialize_province(self, inputs):
+        province = UnifiedProvinceIntelligence(
+            location=LocationContext(
+                province=inputs.get("province", ""),
+                municipality=inputs.get("municipality", ""),
+                ward=inputs.get("area"),
+                area_type="township"
+            ),
+            population_density="high"
+        )
+
+        issue = inputs.get("issue", "")
+        if issue:
+            province.set_issue(issue)
+
+            issue_lower = issue.lower()
+
+            if "electricity" in issue_lower:
+                province.update_infrastructure("electricity", "outage")
+
+            if "water" in issue_lower:
+                province.update_infrastructure("water", "critical")
+
+            if "road" in issue_lower:
+                province.update_infrastructure("roads", "damaged")
+
+            if "storm" in issue_lower or "rain" in issue_lower:
+                province.environment.weather = "storm"
+
+        return province
+
+    # -----------------------------------------------------
     def run(self, inputs=None):
         inputs = inputs or {}
 
         run_id = f"AX-{uuid.uuid4().hex[:8].upper()}"
         workflow_name = self.workflow.get("workflow", "unknown")
 
+        province = self.initialize_province(inputs)
+
+        # Risk engine
+        risk_engine = RiskEngine()
+        risk_engine.compute(province)
+
         step_context = {
-            "inputs": inputs,
+            "province": province,
             "run_id": run_id,
             "workflow": workflow_name,
+            "inputs": inputs
         }
 
-        ordered_steps = []
+        steps_output = []
 
-        # =====================================================
-        # EXECUTE WORKFLOW STEPS
-        # =====================================================
         for step in self.workflow.get("steps", []):
             step_name = step.get("name")
             agent_name = step.get("agent")
-            task = step.get("task", "")
+            task = step.get("task")
 
             agent = self.agent_map.get(agent_name)
 
             if not agent:
-                output = f"[ERROR] Agent not found: {agent_name}"
+                output = {"error": f"Missing agent {agent_name}"}
                 status = "error"
             else:
                 try:
                     output = agent.run(task, step_context)
                     status = "success"
                 except Exception as e:
-                    output = f"[EXCEPTION] {str(e)}"
+                    output = {"exception": str(e)}
                     status = "error"
 
-            step_result = {
+            steps_output.append({
                 "step": step_name,
                 "agent": agent_name,
-                "task": task,
                 "status": status,
-                "output": output,
-            }
+                "output": output
+            })
 
-            ordered_steps.append(step_result)
-
-            # store in context for next agents
             step_context[step_name] = output
 
-            print(f"{step_name.upper()}: {output}")
-
-        # =====================================================
-        # CONFIDENCE ENGINE
-        # =====================================================
-        input_count = len(inputs)
-
-        base_score = 0.65
-        bonus = min(0.25, input_count * 0.03)
-
-        errors = [s for s in ordered_steps if s["status"] == "error"]
-
-        if errors:
-            base_score -= 0.2
+        # Confidence
+        errors = [s for s in steps_output if s["status"] == "error"]
 
         confidence = {
-            "score": round(max(0.4, base_score + bonus), 2),
+            "score": 0.75 if not errors else 0.55,
             "notes": [
-                "Workflow executed successfully" if not errors else "Workflow completed with errors",
-                f"Inputs provided: {input_count}",
-                f"Steps executed: {len(ordered_steps)}",
-            ],
+                f"Steps: {len(steps_output)}",
+                f"Errors: {len(errors)}"
+            ]
         }
 
-        # =====================================================
-        # MONITORING (SAFE)
-        # =====================================================
-        monitoring_agent = self.agent_map.get("MunicipalMonitoringAgent") \
-            or self.agent_map.get("MonitoringAgent")
+        monitoring = MunicipalMonitoringAgent().run("monitor", {
+            "workflow": workflow_name,
+            "run_id": run_id,
+            "steps": steps_output,
+            "confidence": confidence
+        })
 
-        monitoring = None
-
-        if monitoring_agent:
-            monitoring = monitoring_agent.run(
-                "Capture metrics",
-                {
-                    "workflow": workflow_name,
-                    "run_id": run_id,
-                    "steps": ordered_steps,
-                    "confidence": confidence,
-                },
-            )
-
-        print(f"MONITOR: {monitoring}")
-
-        # =====================================================
-        # FINAL SUMMARY
-        # =====================================================
-        recommendations = step_context.get("recommend", {})
-        decision = step_context.get("decision", {})
-
-        final_summary = {
-            "summary": f"Aura-X completed workflow: {workflow_name}",
-            "top_actions": recommendations.get("recommendations", [])
-            if isinstance(recommendations, dict)
-            else [],
-            "decision": decision if isinstance(decision, dict) else {},
-            "monitoring": monitoring,
+        final = {
+            "summary": "Aura-X execution completed",
+            "province_intelligence": province.summary(),
+            "monitoring": monitoring
         }
 
         return build_workflow_output(
             workflow_name,
             run_id,
             inputs,
-            ordered_steps,
-            final_summary,
-            confidence,
+            steps_output,
+            final,
+            confidence
         )
 
 
-# =========================================================
-# OPTIONAL LOCAL TEST
-# =========================================================
+# ================= TEST =================
 if __name__ == "__main__":
-    orchestrator = AuraXOrchestrator(
-    yaml_path="workflows/municipal_ops.yaml"
-)
+    orch = AuraXOrchestrator("workflows/municipal_ops.yaml")
 
-    result = orchestrator.run(
-        inputs={
-            "municipality": "Gert Sibande",
-            "issue": "electricity outage in township",
-            "area": "Ward 12",
-            "priority": "high",
-        }
-    )
+    result = orch.run({
+        "province": "Mpumalanga",
+        "municipality": "Gert Sibande",
+        "issue": "electricity outage in township",
+        "area": "Ward 12"
+    })
 
-    print("\nFINAL OUTPUT:\n")
+
     print(result)

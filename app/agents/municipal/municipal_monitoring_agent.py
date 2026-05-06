@@ -1,30 +1,26 @@
 # app/agents/municipal/municipal_monitoring_agent.py
-
+from app.agents.municipal.base_municipal_agent import BaseMunicipalAgent
 from datetime import datetime
+from app.core.unified_province_intelligence import UnifiedProvinceIntelligence
 
-class MunicipalMonitoringAgent:
+class MunicipalMonitoringAgent(BaseMunicipalAgent):
+    def __init__(self):
+        super().__init__("MunicipalMonitoringAgent")
+
     def run(self, task: str, context=None):
         context = context or {}
+        province = context.get("province")
 
-        workflow = context.get("workflow")
-        run_id = context.get("run_id")
-        steps = context.get("steps", [])
-        confidence = context.get("confidence", {})
-
-        failed_steps = [s for s in steps if s.get("status") != "success"]
+        event_count = 0
+        if province is not None and hasattr(province, "event_log"):
+            event_count = len(province.event_log)
 
         return {
             "agent": "MunicipalMonitoringAgent",
-            "timestamp": datetime.now().isoformat(),
-            "workflow": workflow,
-            "run_id": run_id,
-            "total_steps": len(steps),
-            "failed_steps": len(failed_steps),
-            "confidence_score": confidence.get("score", 0),
-            "system_health": "stable" if not failed_steps else "degraded",
-            "notes": [
-                "Municipal workflow executed",
-                "Ready for audit and compliance reporting",
-                "Supports integration with dashboards and external systems"
-            ]
+            "task": task,
+            "workflow": context.get("workflow"),
+            "run_id": context.get("run_id"),
+            "steps": context.get("steps", []),
+            "confidence": context.get("confidence", {}),
+            "event_count": event_count,
         }
