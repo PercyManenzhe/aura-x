@@ -2,19 +2,16 @@ from typing import Dict, Any, List
 
 
 class SimulationEngine:
-
     def simulate(self, province) -> Dict[str, Any]:
         """
         Runs future scenario simulations based on current province state
         """
-
-        simulations = []
+        simulations: List[Dict[str, Any]] = []
 
         # -----------------------------
         # ELECTRICITY OUTAGE SCENARIO
         # -----------------------------
         if province.infrastructure.electricity == "outage":
-
             simulations.append({
                 "scenario": "Electricity Outage Escalation",
                 "timeline": [
@@ -30,7 +27,6 @@ class SimulationEngine:
         # FLOOD SCENARIO
         # -----------------------------
         if province.environment.flood_risk == "high":
-
             simulations.append({
                 "scenario": "Flood Escalation",
                 "timeline": [
@@ -46,7 +42,6 @@ class SimulationEngine:
         # WATER FAILURE SCENARIO
         # -----------------------------
         if province.infrastructure.water in ["critical", "outage"]:
-
             simulations.append({
                 "scenario": "Water Supply Crisis",
                 "timeline": [
@@ -75,3 +70,5 @@ class SimulationEngine:
             "total_scenarios": len(simulations),
             "scenarios": simulations
         }
+
+    run = simulate

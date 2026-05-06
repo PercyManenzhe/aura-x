@@ -3,29 +3,34 @@ import yaml
 import uuid
 from datetime import datetime, timezone
 
-
+# ================= GEOSPATIAL =================
+from app.geospatial.gis_engine import GISEngine
+from app.geospatial.heatmap_generator import HeatmapGenerator
+from app.geospatial.ward_mapper import WardMapper
 
 # ================= CORE =================
-from ..core.unified_province_intelligence import UnifiedProvinceIntelligence
-from ..core.risk_engine import RiskEngine
-from ..core.location_context import LocationContext
+from app.core.unified_province_intelligence import UnifiedProvinceIntelligence
+from app.core.risk_engine import RiskEngine
+from app.core.location_context import LocationContext
+from app.core.simulation_engine import SimulationEngine
 
 # ================= MUNICIPAL =================
-from ..agents.municipal.municipal_ops_agent import MunicipalOpsAgent
-from ..agents.municipal.municipal_reasoning_agent import MunicipalReasoningAgent
-from ..agents.municipal.municipal_recommendation_agent import MunicipalRecommendationAgent
-from ..agents.municipal.municipal_response_agent import MunicipalResponseAgent
-from ..agents.municipal.municipal_decision_agent import MunicipalDecisionAgent
-from ..agents.municipal.municipal_safety_agent import MunicipalSafetyAgent
-from ..agents.municipal.municipal_monitoring_agent import MunicipalMonitoringAgent
+from app.agents.municipal.municipal_ops_agent import MunicipalOpsAgent
+from app.agents.municipal.municipal_reasoning_agent import MunicipalReasoningAgent
+from app.agents.municipal.municipal_recommendation_agent import MunicipalRecommendationAgent
+from app.agents.municipal.municipal_response_agent import MunicipalResponseAgent
+from app.agents.municipal.municipal_decision_agent import MunicipalDecisionAgent
+from app.agents.municipal.municipal_safety_agent import MunicipalSafetyAgent
+from app.agents.municipal.municipal_monitoring_agent import MunicipalMonitoringAgent
 
 # ================= MINING =================
-from ..agents.mining.mining_safety_agent import MiningSafetyAgent
-from ..agents.mining.mining_recommendation_agent import MiningRecommendationAgent
+from app.agents.mining.mining_safety_agent import MiningSafetyAgent
+from app.agents.mining.mining_recommendation_agent import MiningRecommendationAgent
 
 # ================= TOURISM =================
-from ..agents.tourism.tourism_safety_agent import TourismSafetyAgent
-from ..agents.tourism.tourism_recommendation_agent import TourismRecommendationAgent
+from app.agents.tourism.tourism_safety_agent import TourismSafetyAgent
+from app.agents.tourism.tourism_recommendation_agent import TourismRecommendationAgent
+
 
 def build_workflow_output(workflow_name, run_id, inputs, steps, final, confidence):
     return {
@@ -56,17 +61,15 @@ class AuraXOrchestrator:
             
             "MiningSafetyAgent": MiningSafetyAgent(),
             "MiningRecommendationAgent": MiningRecommendationAgent(),
-            
+           
             "TourismSafetyAgent": TourismSafetyAgent(),
             "TourismRecommendationAgent": TourismRecommendationAgent(),
         }
 
-    
     def load_workflow(self, path):
         with open(path, "r") as f:
             return yaml.safe_load(f)
 
-   
     def initialize_province(self, inputs):
         province = UnifiedProvinceIntelligence(
             location=LocationContext(
@@ -81,18 +84,18 @@ class AuraXOrchestrator:
         issue = inputs.get("issue", "")
         if issue:
             province.set_issue(issue)
-            
+
             issue_lower = issue.lower()
-            
+
             if "electricity" in issue_lower:
                 province.update_infrastructure("electricity", "outage")
-           
+
             if "water" in issue_lower:
                 province.update_infrastructure("water", "critical")
-           
+
             if "road" in issue_lower:
                 province.update_infrastructure("roads", "damaged")
-            
+
             if "storm" in issue_lower or "rain" in issue_lower:
                 province.environment.weather = "storm"
 
@@ -100,7 +103,7 @@ class AuraXOrchestrator:
 
     def run(self, inputs=None):
         inputs = inputs or {}
-        
+
         run_id = f"AX-{uuid.uuid4().hex[:8].upper()}"
         workflow_name = self.workflow.get("workflow", "unknown")
 
@@ -111,11 +114,18 @@ class AuraXOrchestrator:
         risk_engine = RiskEngine()
         risk_engine.compute(province)
 
-        # Risk Engine → GIS Layer
-        # Placeholder for GIS (replace with actual imports when modules exist)
-        map_data = "placeholder"  # gis_engine.generate_map_data(province)
-        heatmap_data = "placeholder"  # heatmap.generate(province)
-        ward_data = "placeholder"  # mapper.map(province)
+        # GIS Intelligence
+        gis_engine = GISEngine()
+        heatmap = HeatmapGenerator()
+        mapper = WardMapper()
+
+        map_data = gis_engine.generate_map_data(province)
+        heatmap_data = heatmap.generate(province)
+        ward_data = mapper.map(province)
+
+        # Simulation Engine
+        simulation_engine = SimulationEngine()
+        simulation_results = simulation_engine.run(province)
 
         # GIS Layer → Agents
         step_context = {
@@ -126,12 +136,12 @@ class AuraXOrchestrator:
         }
 
         steps_output = []
-        
+
         for step in self.workflow.get("steps", []):
             step_name = step.get("name")
             agent_name = step.get("agent")
             task = step.get("task")
-           
+
             agent = self.agent_map.get(agent_name)
 
             if not agent:
@@ -151,13 +161,11 @@ class AuraXOrchestrator:
                 "status": status,
                 "output": output
             })
-            
+
             step_context[step_name] = output
 
-        # Agents → Final Output
-        
         errors = [s for s in steps_output if s["status"] == "error"]
-        
+
         confidence = {
             "score": 0.75 if not errors else 0.55,
             "notes": [f"Steps: {len(steps_output)}", f"Errors: {len(errors)}"]
@@ -178,15 +186,24 @@ class AuraXOrchestrator:
                 "map_data": map_data,
                 "heatmap": heatmap_data,
                 "ward": ward_data,
-                "notes": "GIS data is currently static. Future versions will integrate real GIS datasets for dynamic mapping and analysis."
-            }
+            },
+            "simulation": simulation_results,
+            "notes": "GIS data is currently static. Future versions will integrate real GIS datasets for dynamic mapping and analysis."
         }
 
-        return build_workflow_output(workflow_name, run_id, inputs, steps_output, final, confidence)
+        return build_workflow_output(
+            workflow_name,
+            run_id,
+            inputs,
+            steps_output,
+            final,
+            confidence
+        )
+
 
 if __name__ == "__main__":
     orch = AuraXOrchestrator("workflows/municipal_ops.yaml")
-    
+
     result = orch.run({
         "province": "Mpumalanga",
         "municipality": "Gert Sibande",
