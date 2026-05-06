@@ -68,6 +68,9 @@ class EventLog:
 # ---------------------------
 @dataclass
 class UnifiedProvinceIntelligence:
+    def __init__(self, location, population_density):
+        self.location = location
+        self.population_density = population_density
 
     # Identity layer
     location: LocationContext
@@ -98,7 +101,9 @@ class UnifiedProvinceIntelligence:
     risk_score: float = 0.0
     risk_level: str = "LOW"
     risk_signals: List[str] = field(default_factory=list)
-
+    alerts: list = field(default_factory=list)
+    early_warning: bool = False
+    emergency: bool = False
     # Early warning system
     early_warning_triggered: bool = False
     emergency_flag: bool = False
@@ -146,7 +151,7 @@ class UnifiedProvinceIntelligence:
 
         self.add_event("risk_update", f"Risk={level}, Score={score}")
 
-    # 📊 FULL SYSTEM SUMMARY
+    # FULL SYSTEM SUMMARY
     def summary(self) -> Dict[str, Any]:
         return {
             "location": self.location.__dict__,

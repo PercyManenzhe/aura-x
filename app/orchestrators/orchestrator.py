@@ -3,32 +3,35 @@ import yaml
 import uuid
 from datetime import datetime, timezone
 
-# ================= CORE =================
-from ..core.unified_province_intelligence import UnifiedProvinceIntelligence
-from ..core.risk_engine import RiskEngine
-from ..core.location_context import LocationContext
+#================== APP ==================
+from app.geospatial.gis_engine import GISEngine
+from app.geospatial.ward_mapper import WardMapper
+from app.geospatial.heatmap_generator import HeatmapGenerator
 
+# ================= CORE =================
+from app.core.unified_province_intelligence import UnifiedProvinceIntelligence
+from app.core.risk_engine import RiskEngine
+from app.core.location_context import LocationContext
+from app.core.simulation_engine import SimulationEngine
 # ================= MUNICIPAL =================
-from ..agents.municipal.municipal_ops_agent import MunicipalOpsAgent
-from ..agents.municipal.municipal_reasoning_agent import MunicipalReasoningAgent
-from ..agents.municipal.municipal_recommendation_agent import MunicipalRecommendationAgent
-from ..agents.municipal.municipal_response_agent import MunicipalResponseAgent
-from ..agents.municipal.municipal_decision_agent import MunicipalDecisionAgent
-from ..agents.municipal.municipal_safety_agent import MunicipalSafetyAgent
-from ..agents.municipal.municipal_monitoring_agent import MunicipalMonitoringAgent
+from app.agents.municipal.municipal_ops_agent import MunicipalOpsAgent
+from app.agents.municipal.municipal_reasoning_agent import MunicipalReasoningAgent
+from app.agents.municipal.municipal_recommendation_agent import MunicipalRecommendationAgent
+from app.agents.municipal.municipal_response_agent import MunicipalResponseAgent
+from app.agents.municipal.municipal_decision_agent import MunicipalDecisionAgent
+from app.agents.municipal.municipal_safety_agent import MunicipalSafetyAgent
+from app.agents.municipal.municipal_monitoring_agent import MunicipalMonitoringAgent
 
 # ================= MINING =================
-from ..agents.mining.mining_safety_agent import MiningSafetyAgent
-from ..agents.mining.mining_recommendation_agent import MiningRecommendationAgent
+from app.agents.mining.mining_safety_agent import MiningSafetyAgent
+from app.agents.mining.mining_recommendation_agent import MiningRecommendationAgent
 
 # ================= TOURISM =================
-from ..agents.tourism.tourism_safety_agent import TourismSafetyAgent
-from ..agents.tourism.tourism_recommendation_agent import TourismRecommendationAgent
+from app.agents.tourism.tourism_safety_agent import TourismSafetyAgent
+from app.agents.tourism.tourism_recommendation_agent import TourismRecommendationAgent
 
-# ...existing code...
-# =========================================================
-# OUTPUT BUILDER
-# =========================================================
+
+
 def build_workflow_output(workflow_name, run_id, inputs, steps, final, confidence):
     return {
         "schema_version": "2.0",
@@ -43,15 +46,14 @@ def build_workflow_output(workflow_name, run_id, inputs, steps, final, confidenc
     }
 
 
-# =========================================================
-# ORCHESTRATOR
-# =========================================================
+
 class AuraXOrchestrator:
     def __init__(self, yaml_path):
-        self.workflow = self.load_workflow(yaml_path)
-
+        self.workflow = self.load_workflow(yaml_path)       
+        
+        
+        
         self.agent_map = {
-            # Municipal
             "MunicipalOpsAgent": MunicipalOpsAgent(),
             "MunicipalReasoningAgent": MunicipalReasoningAgent(),
             "MunicipalRecommendationAgent": MunicipalRecommendationAgent(),
@@ -59,22 +61,21 @@ class AuraXOrchestrator:
             "MunicipalDecisionAgent": MunicipalDecisionAgent(),
             "MunicipalSafetyAgent": MunicipalSafetyAgent(),
             "MunicipalMonitoringAgent": MunicipalMonitoringAgent(),
-
-            # Mining
+ 
             "MiningSafetyAgent": MiningSafetyAgent(),
             "MiningRecommendationAgent": MiningRecommendationAgent(),
 
-            # Tourism
+
             "TourismSafetyAgent": TourismSafetyAgent(),
             "TourismRecommendationAgent": TourismRecommendationAgent(),
         }
 
-    # -----------------------------------------------------
+
     def load_workflow(self, path):
         with open(path, "r") as f:
             return yaml.safe_load(f)
 
-    # -----------------------------------------------------
+
     def initialize_province(self, inputs):
         province = UnifiedProvinceIntelligence(
             location=LocationContext(
@@ -106,7 +107,6 @@ class AuraXOrchestrator:
 
         return province
 
-    # -----------------------------------------------------
     def run(self, inputs=None):
         inputs = inputs or {}
 
@@ -115,7 +115,6 @@ class AuraXOrchestrator:
 
         province = self.initialize_province(inputs)
 
-        # Risk engine
         risk_engine = RiskEngine()
         risk_engine.compute(province)
 
@@ -155,7 +154,6 @@ class AuraXOrchestrator:
 
             step_context[step_name] = output
 
-        # Confidence
         errors = [s for s in steps_output if s["status"] == "error"]
 
         confidence = {
@@ -189,7 +187,6 @@ class AuraXOrchestrator:
         )
 
 
-# ================= TEST =================
 if __name__ == "__main__":
     orch = AuraXOrchestrator("workflows/municipal_ops.yaml")
 
