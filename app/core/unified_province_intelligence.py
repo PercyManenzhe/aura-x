@@ -2,34 +2,25 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
-
-# ---------------------------
-# LOCATION (PROVINCE-FIRST DESIGN)
-# ---------------------------
+# --------------------------- LOCATION (PROVINCE-FIRST DESIGN) ---------------------------
 @dataclass
 class LocationContext:
     country: str = "South Africa"
-    province: str = ""              # CORE INTELLIGENCE UNIT (NOT STATE)
+    province: str = ""
     municipality: str = ""
     ward: Optional[str] = None
-    area_type: str = "township"     # township, urban, rural, informal_settlement
+    area_type: str = "township"
 
-
-# ---------------------------
-# ENVIRONMENT
-# ---------------------------
+# --------------------------- ENVIRONMENT ---------------------------
 @dataclass
 class EnvironmentalState:
     weather: str = "normal"
-    weather_risk: str = "low"       # ADDED for Risk Engine compatibility
+    weather_risk: str = "low"
     rainfall_level: str = "low"
     flood_risk: str = "low"
     temperature: Optional[float] = None
 
-
-# ---------------------------
-# INFRASTRUCTURE SYSTEMS
-# ---------------------------
+# --------------------------- INFRASTRUCTURE SYSTEMS ---------------------------
 @dataclass
 class InfrastructureState:
     electricity: str = "stable"
@@ -37,14 +28,9 @@ class InfrastructureState:
     sewage: str = "stable"
     roads: str = "stable"
     telecoms: str = "stable"
-
-    # ADDED: global intelligence compatibility
     infrastructure_status: str = "stable"
 
-
-# ---------------------------
-# RISK SIGNALS (CORE INPUT LAYER)
-# ---------------------------
+# --------------------------- RISK SIGNALS (CORE INPUT LAYER) ---------------------------
 @dataclass
 class RiskSignals:
     crime_risk: str = "low"
@@ -52,28 +38,18 @@ class RiskSignals:
     flood_risk: str = "low"
     infrastructure_failure_risk: str = "low"
 
-
-# ---------------------------
-# EVENT MEMORY (AI MEMORY LAYER)
-# ---------------------------
+# --------------------------- EVENT MEMORY (AI MEMORY LAYER) ---------------------------
 @dataclass
 class EventLog:
     event_type: str
     description: str
     timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
 
-
-# ---------------------------
-# AURA-X CORE INTELLIGENCE BRAIN
-# ---------------------------
+# --------------------------- AURA-X CORE INTELLIGENCE BRAIN ---------------------------
 @dataclass
 class UnifiedProvinceIntelligence:
-    def __init__(self, location, population_density):
-        self.location = location
-        self.population_density = population_density
-
-    # Identity layer
     location: LocationContext
+    population_density: str = "medium"
 
     # Environment layer
     environment: EnvironmentalState = field(default_factory=EnvironmentalState)
@@ -85,9 +61,6 @@ class UnifiedProvinceIntelligence:
     risks: RiskSignals = field(default_factory=RiskSignals)
 
     # Population intelligence
-    population_density: str = "medium"
-
-    # Service intelligence
     service_area: str = ""
     service_failures: List[str] = field(default_factory=list)
 
@@ -104,7 +77,6 @@ class UnifiedProvinceIntelligence:
     alerts: list = field(default_factory=list)
     early_warning: bool = False
     emergency: bool = False
-    # Early warning system
     early_warning_triggered: bool = False
     emergency_flag: bool = False
 
@@ -112,16 +84,7 @@ class UnifiedProvinceIntelligence:
     timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
     confidence: float = 1.0
 
-
-
-
-
-
-
-    # ---------------------------
-    # CORE METHODS (INTELLIGENCE LAYER)
-    # ---------------------------
-
+    # --------------------------- CORE METHODS (INTELLIGENCE LAYER) ---------------------------
     def add_event(self, event_type: str, description: str):
         self.event_log.append(EventLog(event_type, description))
 

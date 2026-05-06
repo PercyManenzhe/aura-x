@@ -1,26 +1,22 @@
-# app/geospatial/gis_engine.py
-
 class GISEngine:
+    """
+    Converts Province Intelligence into GIS-ready data
+    """
 
-    def map_province(self, province):
-        """
-        Convert intelligence into geo-visual data
-        """
-
+    def generate_map_data(self, province):
         return {
             "location": {
                 "province": province.location.province,
                 "municipality": province.location.municipality,
-                "ward": province.location.ward
+                "ward": province.location.ward,
             },
-            "risk_score": province.risk_score,
-            "risk_level": province.risk_level,
-            "coordinates": self._mock_coordinates(province)
-        }
-
-    def _mock_coordinates(self, province):
-        # Replace later with real GIS lookup
-        return {
-            "lat": -26.2,
-            "lng": 28.0
+            "risk": {
+                "score": province.risk_score,
+                "level": province.risk_level,
+            },
+            "infrastructure": province.infrastructure,
+            "environment": {
+                "weather": province.environment.weather,
+                "flood_risk": province.environment.flood_risk,
+            }
         }

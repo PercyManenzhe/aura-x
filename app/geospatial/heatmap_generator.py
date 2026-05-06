@@ -1,26 +1,22 @@
-# app/geospatial/heatmap_generator.py
-
 class HeatmapGenerator:
+    
 
-    def generate(self, ward_data):
+    def generate(self, province):
         """
-        Convert risk into heatmap intensity
+        Convert risk into color zones
         """
 
-        score = ward_data["risk_score"]
+        risk_score = province.risk_score
 
-        if score >= 0.8:
+        if risk_score >= 0.75:
             color = "red"
-        elif score >= 0.6:
+        elif risk_score >= 0.4:
             color = "orange"
-        elif score >= 0.4:
-            color = "yellow"
         else:
             color = "green"
 
         return {
-            "ward": ward_data["ward"],
-            "intensity": score,
-            "color": color,
-            "alerts": ward_data["alerts"]
+            "ward": province.location.ward,
+            "risk_score": risk_score,
+            "color": color
         }
