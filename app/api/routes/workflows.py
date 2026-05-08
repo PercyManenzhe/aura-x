@@ -6,7 +6,7 @@ from app.orchestrators.orchestrator import AuraXOrchestrator
 
 router = APIRouter()
 
-app = FastAPI(title="Aura-X API", version="1.0")
+app = FastAPI(title="Aura-X API", version="2.0")
 
 workflow_map = {
     # Core demos
