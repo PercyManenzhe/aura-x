@@ -1,140 +1,153 @@
 import os
+import json
+from typing import Dict, Any, Optional
 from dotenv import load_dotenv
-from openai import OpenAI
 
-# =========================================================
-# LOAD ENVIRONMENT VARIABLES
-# =========================================================
 load_dotenv()
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# =========================================================
-# OPENAI CLIENT
-# =========================================================
-client = None
-
-if OPENAI_API_KEY:
-    client = OpenAI(api_key=OPENAI_API_KEY)
-
-# =========================================================
-# AVAILABILITY CHECK
-# =========================================================
-def llm_available() -> bool:
-    return client is not None
-
-# =========================================================
-# GENERATE RESPONSE
-# =========================================================
-def generate_response(
-    prompt: str,
-    system_prompt: str = "You are Aura-X Municipal Intelligence AI.",
-    model: str = "gpt-4.1-mini",
-    temperature: float = 0.3,
-    max_tokens: int = 500,
-):
+class LLMAdapterV2:
     """
-    Production-ready LLM wrapper for Aura-X.
+    Aura-X Intelligence Layer (LLM Adapter V2)
+
+    This is the central brain connector for:
+    - reasoning
+    - decision-making
+    - risk interpretation
+    - structured outputs
     """
 
-    if not llm_available():
-        return {
-            "status": "offline",
-            "response": "LLM unavailable. OPENAI_API_KEY missing."
-        }
+    def __init__(self):
+        self.api_key = os.getenv("OPENAI_API_KEY")
+        self.model = os.getenv("LLM_MODEL", "gpt-4o-mini")
 
-    try:
-        completion = client.chat.completions.create(
-            model=model,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            messages=[
-                {
-                    "role": "system",
-                    "content": system_prompt
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
+    # -----------------------------------------------------
+    # CORE CALL
+    # -----------------------------------------------------
+    def call_llm(self, prompt: str, mode: str = "reasoning") -> str:
+        """
+        Base LLM call (safe fallback ready)
+        """
+
+        if not self.api_key:
+            return self._mock_response(prompt, mode)
+
+        # IMPORTANT:
+        # For now we keep safe fallback.
+        # Later we plug OpenAI / Azure / local models here.
+
+        return self._mock_response(prompt, mode)
+    
+    """
+    We will replace it with this in the future when we enable real LLM calls. For now, it serves as a safe fallback to ensure the system always returns structured data.:
+
+OpenAI
+Azure OpenAI
+local LLM (Ollama)
+Huawei model APIs
+    """
+
+    # -----------------------------------------------------
+    # STRUCTURED INTELLIGENCE CALL
+    # -----------------------------------------------------
+    def structured_call(
+        self,
+        system: str,
+        user: str,
+        schema: Optional[Dict[str, Any]] = None,
+        mode: str = "reasoning"
+    ) -> Dict[str, Any]:
+        """
+        Forces structured JSON output for agents
+        """
+
+        prompt = f"""
+SYSTEM:
+{system}
+
+USER:
+{user}
+
+IMPORTANT:
+Return ONLY valid JSON.
+No explanation.
+"""
+
+        raw = self.call_llm(prompt, mode=mode)
+
+        # Try parse JSON safely
+        try:
+            return json.loads(raw)
+        except Exception:
+            return {
+                "raw_output": raw,
+                "parsed": False,
+                "mode": mode
+            }
+
+    # -----------------------------------------------------
+    # INTELLIGENCE MODES
+    # -----------------------------------------------------
+
+    def reasoning(self, context: Dict) -> Dict:
+        return self.structured_call(
+            system="You are a municipal reasoning engine.",
+            user=json.dumps(context),
+            mode="reasoning"
         )
 
-        response_text = completion.choices[0].message.content
+    def decision(self, context: Dict) -> Dict:
+        return self.structured_call(
+            system="You are a decision engine for municipal operations.",
+            user=json.dumps(context),
+            mode="decision"
+        )
 
-        return {
-            "status": "success",
-            "model": model,
-            "response": response_text
-        }
+    def risk_analysis(self, context: Dict) -> Dict:
+        return self.structured_call(
+            system="You analyze risks in municipalities.",
+            user=json.dumps(context),
+            mode="risk"
+        )
 
-    except Exception as e:
-        return {
-            "status": "error",
-            "response": str(e)
-        }
+    def recommendations(self, context: Dict) -> Dict:
+        return self.structured_call(
+            system="You generate actionable municipal recommendations.",
+            user=json.dumps(context),
+            mode="recommendation"
+        )
 
-# =========================================================
-# MUNICIPAL ANALYSIS HELPER
-# =========================================================
-def municipal_analysis(issue: str, municipality: str):
-    """
-    Specialized municipal reasoning helper.
-    """
+    # -----------------------------------------------------
+    # MOCK ENGINE (until API is enabled)
+    # -----------------------------------------------------
+    def _mock_response(self, prompt: str, mode: str) -> str:
+        """
+        Deterministic fallback so system ALWAYS works
+        """
 
-    prompt = f"""
-    Municipality: {municipality}
+        if mode == "risk":
+            return json.dumps({
+                "risk_score": 0.42,
+                "risks": ["Service disruption", "Public safety risk"],
+                "level": "MEDIUM"
+            })
 
-    Incident:
-    {issue}
+        if mode == "decision":
+            return json.dumps({
+                "decision": "Standard SLA intervention",
+                "priority": "medium"
+            })
 
-    Analyze:
-    - public safety risks
-    - infrastructure risks
-    - likely escalation
-    - recommended response
-    - municipal departments involved
-    """
+        if mode == "recommendation":
+            return json.dumps({
+                "actions": [
+                    "Deploy maintenance team",
+                    "Notify municipal control room"
+                ]
+            })
 
-    return generate_response(prompt)
-
-# =========================================================
-# INCIDENT CLASSIFICATION
-# =========================================================
-def classify_incident(issue: str):
-
-    prompt = f"""
-    Classify the following municipal issue:
-
-    {issue}
-
-    Return:
-    - category
-    - severity
-    - urgency
-    - recommended department
-    """
-
-    return generate_response(prompt)
-
-# =========================================================
-# EARLY WARNING ENGINE
-# =========================================================
-def early_warning_prediction(context: dict):
-
-    prompt = f"""
-    Analyze the following municipal intelligence context
-    and determine if early warning risks exist.
-
-    Context:
-    {context}
-
-    Determine:
-    - escalation likelihood
-    - emergency risk
-    - infrastructure instability
-    - social unrest probability
-    """
-
-    return generate_response(prompt)
+        return json.dumps({
+            "message": "Aura-X mock reasoning output",
+            "status": "ok"
+        })
 
