@@ -10,7 +10,7 @@ WORKFLOW_MAP = {
     "mining": "workflows/mining_safety.yaml",
     "municipal": "workflows/municipal_ops.yaml",
 }
-from app.services.storage_adapter import save_run_local
+from app.api.services.storage_adapter import save_run_local
 
 path = save_run_local(result)
 print(f"\n✅ Saved run output to: {path}")

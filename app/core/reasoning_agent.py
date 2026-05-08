@@ -6,7 +6,7 @@
 
 # app/agents/reasoning_agent.py
 
-import app.services.llm_adapter as llm_service
+import app.api.services.llm_adapter as llm_service
 
 llm_available = llm_service.llm_available
 call_openai = llm_service.call_openai
