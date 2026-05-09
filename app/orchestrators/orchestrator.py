@@ -8,10 +8,9 @@ from app.geospatial.heatmap_generator import HeatmapGenerator
 from app.geospatial.ward_mapper import WardMapper
 
 # ================= CORE =================
-from app.core.unified_province_intelligence import UnifiedProvinceIntelligence
 from app.core.risk_engine import RiskEngine
-from app.core.location_context import LocationContext
 from app.core.simulation_engine import SimulationEngine
+from app.core.intelligence_packet import IntelligencePacket
 
 # ================= MUNICIPAL =================
 from app.agents.municipal.municipal_ops_agent import MunicipalOpsAgent
@@ -31,7 +30,14 @@ from app.agents.tourism.tourism_safety_agent import TourismSafetyAgent
 from app.agents.tourism.tourism_recommendation_agent import TourismRecommendationAgent
 
 
-def build_workflow_output(workflow_name, run_id, inputs, steps, final, confidence):
+def build_workflow_output(
+    workflow_name,
+    run_id,
+    inputs,
+    steps,
+    final,
+    confidence
+):
     return {
         "schema_version": "2.0",
         "project": "Aura-X",
@@ -46,7 +52,9 @@ def build_workflow_output(workflow_name, run_id, inputs, steps, final, confidenc
 
 
 class AuraXOrchestrator:
+
     def __init__(self, yaml_path):
+
         self.workflow = self.load_workflow(yaml_path)
 
         self.agent_map = {
@@ -65,42 +73,40 @@ class AuraXOrchestrator:
             "TourismRecommendationAgent": TourismRecommendationAgent(),
         }
 
+    # ================= LOAD WORKFLOW =================
     def load_workflow(self, path):
+
         with open(path, "r") as f:
             return yaml.safe_load(f)
 
-    # ---------------- INITIALISE PROVINCE ----------------
-    def initialize_province(self, inputs):
+    # ================= INITIALIZE PACKET =================
+    # ---------------- INITIALISE PACKET ----------------
+def initialize_packet(self, inputs, run_id):
 
-        province = UnifiedProvinceIntelligence(
-            location=LocationContext(
-                province=inputs.get("province", ""),
-                municipality=inputs.get("municipality", ""),
-                ward=inputs.get("area"),
-                area_type="township"
-            ),
-            population_density="high"
-        )
+    packet = IntelligencePacket(
+        run_id=run_id,
+        workflow=self.workflow.get("workflow", "unknown"),
+        province=inputs.get("province", ""),
+        municipality=inputs.get("municipality", ""),
+        ward=inputs.get("area", ""),
+        issue=inputs.get("issue", "")
+    )
 
-        issue = inputs.get("issue", "")
-        if issue:
-            province.set_issue(issue)
+    issue = packet.issue.lower()
 
-            issue_lower = issue.lower()
+    if "electricity" in issue:
+        packet.infrastructure["electricity"] = "outage"
 
-            if "electricity" in issue_lower:
-                province.infrastructure.electricity = "outage"
+    if "water" in issue:
+        packet.infrastructure["water"] = "failure"
 
-            if "water" in issue_lower:
-                province.infrastructure.water = "critical"
+    if "road" in issue:
+        packet.infrastructure["roads"] = "damaged"
 
-            if "road" in issue_lower:
-                province.infrastructure.roads = "damaged"
+    if "storm" in issue or "rain" in issue:
+        packet.environment["weather"] = "storm"
 
-            if "storm" in issue_lower or "rain" in issue_lower:
-                province.environment.weather = "storm"
-
-        return province
+    return packet
 
     # ---------------- MAIN RUN ----------------
     def run(self, inputs=None):
@@ -110,30 +116,38 @@ class AuraXOrchestrator:
         workflow_name = self.workflow.get("workflow", "unknown")
 
         # 1. Province
-        province = self.initialize_province(inputs)
+        packet = self.initialize_packet(inputs, run_id)
 
         # 2. Risk Engine
         risk_engine = RiskEngine()
-        risk_result = risk_engine.compute(province)
-
-        province.set_risk_data(risk_result)
+        risk_result = risk_engine.compute(packet)
+        packet.risk = risk_result
 
         # 3. GIS
         gis_engine = GISEngine()
         heatmap = HeatmapGenerator()
         mapper = WardMapper()
 
-        map_data = gis_engine.generate_map_data(province, risk_result)
-        heatmap_data = heatmap.generate(province, risk_result)
-        ward_data = mapper.map(province, risk_result)
+        map_data = gis_engine.generate_map_data(
+        packet,
+        risk_result
+        )
+
+        packet.set_gis(map_data)
+        heatmap_data = heatmap.generate(packet.province, risk_result)
+        ward_data = mapper.map(packet.province, risk_result)
 
         # 4. Simulation
-        sim_engine = SimulationEngine()
-        simulation_results = sim_engine.run(province, risk_result)
+        simulation_results = simulation_engine.run(
+        packet,
+        risk_result
+   )
+
+        packet.set_simulation(simulation_results)
 
         # 5. Context for agents
         step_context = {
-            "province": province,
+            "packet": packet,
             "risk": risk_result,
             "gis": map_data,
             "simulation": simulation_results,
@@ -187,7 +201,7 @@ class AuraXOrchestrator:
 
         final = {
             "summary": "Aura-X execution completed",
-            "province_intelligence": province.summary(),
+            "intelligence_packet": packet.summary(),
             "monitoring": monitoring,
             "gis": {
                 "map_data": map_data,

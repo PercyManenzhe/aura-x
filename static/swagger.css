@@ -1,0 +1,8 @@
+.swagger-ui .topbar {
+    background-color: #0f172a;
+}
+
+.swagger-ui .topbar-wrapper img {
+    content: url('/static/aura-x-logo.jpg');
+    height: 40px;
+}
