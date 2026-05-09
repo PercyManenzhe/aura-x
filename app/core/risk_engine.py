@@ -1,193 +1,166 @@
-from typing import List
+from dataclasses import dataclass
+from typing import Dict, Any, List
+
+
+@dataclass
+class RiskWeights:
+    infrastructure: float = 0.35
+    crime: float = 0.25
+    environment: float = 0.20
+    service_failure: float = 0.20
 
 
 class RiskEngine:
+    """
+    Aura-X Risk Engine v2 (Stable Unified Model)
+    Works ONLY with UnifiedProvinceIntelligence objects
+    """
 
     def __init__(self):
-        # -----------------------------
-        # WEIGHTS (tunable later via YAML)
-        # -----------------------------
-        self.weights = {
-            "infrastructure": 0.4,
-            "environment": 0.2,
-            "population": 0.2,
-            "active_issues": 0.2
-        }
+        self.weights = RiskWeights()
 
-    # =====================================================
-    # MAIN ENTRY
-    # =====================================================
-    def compute(self, province):
-        """
-        Main intelligence computation
-        """
+    # ---------------- MAIN ENTRY ----------------
+    def compute(self, ctx) -> Dict[str, Any]:
 
-        infra_score = self._score_infrastructure(province)
-        env_score = self._score_environment(province)
-        pop_score = self._score_population(province)
-        issue_score = self._score_issues(province)
+        infra_score = self._infra_risk(ctx)
+        crime_score = self._crime_risk(ctx)
+        env_score = self._environment_risk(ctx)
+        service_score = self._service_risk(ctx)
 
-        # -----------------------------
-        # FINAL SCORE (0 → 1)
-        # -----------------------------
-        total_score = (
-            infra_score * self.weights["infrastructure"] +
-            env_score * self.weights["environment"] +
-            pop_score * self.weights["population"] +
-            issue_score * self.weights["active_issues"]
+        risk_score = (
+            infra_score * self.weights.infrastructure +
+            crime_score * self.weights.crime +
+            env_score * self.weights.environment +
+            service_score * self.weights.service_failure
         )
 
-        province.risk_score = round(total_score, 2)
+        risk_level = self._classify(risk_score)
+        early_warning = self._early_warning(risk_score, ctx)
 
-        # -----------------------------
-        # RISK LEVEL
-        # -----------------------------
-        province.risk_level = self._get_risk_level(province.risk_score)
+        return {
+            "risk_score": round(risk_score, 2),
+            "risk_level": risk_level,
+            "early_warning": early_warning,
 
-        # -----------------------------
-        # ALERTS
-        # -----------------------------
-        province.alerts = self._generate_alerts(province)
+            "breakdown": {
+                "infrastructure": infra_score,
+                "crime": crime_score,
+                "environment": env_score,
+                "service_failure": service_score,
+            },
 
-        # -----------------------------
-        # EARLY WARNING / EMERGENCY
-        # -----------------------------
-        province.early_warning = province.risk_score >= 0.6
-        province.emergency = province.risk_score >= 0.8
+            "intelligence": {
+                "signals": self._risk_signals(ctx, risk_score),
+                "drivers": {
+                    "infrastructure": infra_score,
+                    "crime": crime_score,
+                    "environment": env_score,
+                    "service_failure": service_score
+                }
+            },
 
-        return province
+            "gis_ready": True,
+            "simulation_ready": True
+        }
 
-    # =====================================================
-    # INFRASTRUCTURE SCORING
-    # =====================================================
-    def _score_infrastructure(self, province):
+    # ---------------- INFRASTRUCTURE ----------------
+    def _infra_risk(self, ctx):
+        infra = ctx.infrastructure
+
         score = 0.0
 
-        infra = province.infrastructure
-
         if infra.electricity == "outage":
+            score += 0.6
+
+        if infra.water == "failure":
             score += 0.4
 
-        if infra.water in ["critical", "outage"]:
+        if infra.roads == "damaged":
             score += 0.3
-
-        if infra.sewage in ["overflow", "critical"]:
-            score += 0.3
-
-        if infra.roads in ["damaged", "blocked"]:
-            score += 0.2
 
         return min(score, 1.0)
 
-    # =====================================================
-    # ENVIRONMENT SCORING
-    # =====================================================
-    def _score_environment(self, province):
-        env = province.environment
-        score = 0.0
+    # ---------------- CRIME ----------------
+    def _crime_risk(self, ctx):
+        issue = " ".join(ctx.active_issues).lower()
 
-        if env.weather == "storm":
-            score += 0.3
+        score = 0.2
 
-        if env.flood_risk == "high":
+        if "outage" in issue:
             score += 0.5
 
-        if env.rainfall_level == "high":
-            score += 0.2
+        if "dark" in issue:
+            score += 0.3
+
+        if "violent" in issue:
+            score += 0.6
 
         return min(score, 1.0)
 
-    # =====================================================
-    # POPULATION SCORING
-    # =====================================================
-    def _score_population(self, province):
-        density = province.population_density
+    # ---------------- ENVIRONMENT ----------------
+    def _environment_risk(self, ctx):
+        weather = ctx.environment.weather
 
-        if density == "high":
-            return 0.7
-        elif density == "medium":
-            return 0.4
-        else:
-            return 0.2
+        mapping = {
+            "normal": 0.1,
+            "rain": 0.4,
+            "storm": 0.7,
+            "flood": 1.0
+        }
 
-    # =====================================================
-    # ISSUE SCORING
-    # =====================================================
-    def _score_issues(self, province):
-        issues = province.active_issues
+        return mapping.get(weather, 0.1)
 
-        if not issues:
-            return 0.0
+    # ---------------- SERVICE FAILURE ----------------
+    def _service_risk(self, ctx):
+        issue = " ".join(ctx.active_issues).lower()
 
-        score = 0.0
+        score = 0.1
 
-        for issue in issues:
-            issue_lower = issue.lower()
+        if "outage" in issue:
+            score += 0.5
 
-            if "electricity" in issue_lower:
-                score += 0.4
+        if "failure" in issue:
+            score += 0.4
 
-            if "water" in issue_lower:
-                score += 0.3
-
-            if "flood" in issue_lower:
-                score += 0.5
-
-            if "fire" in issue_lower:
-                score += 0.6
+        if "delay" in issue:
+            score += 0.3
 
         return min(score, 1.0)
 
-    # =====================================================
-    # RISK LEVEL
-    # =====================================================
-    def _get_risk_level(self, score):
-        if score >= 0.8:
+    # ---------------- CLASSIFICATION ----------------
+    def _classify(self, score: float) -> str:
+        if score >= 0.75:
             return "CRITICAL"
-        elif score >= 0.6:
+        elif score >= 0.5:
             return "HIGH"
-        elif score >= 0.4:
+        elif score >= 0.25:
             return "MEDIUM"
-        else:
-            return "LOW"
+        return "LOW"
 
-    # =====================================================
-    # ALERT GENERATION
-    # =====================================================
-    def _generate_alerts(self, province) -> List[str]:
-        alerts = []
+    # ---------------- EARLY WARNING ----------------
+    def _early_warning(self, score: float, ctx) -> bool:
+        infra = ctx.infrastructure
 
-        infra = province.infrastructure
-        env = province.environment
+        return any([
+            score >= 0.6,
+            "outage" in " ".join(ctx.active_issues).lower(),
+            infra.electricity == "outage"
+        ])
 
-        # -----------------------------
-        # INFRA ALERTS
-        # -----------------------------
+    # ---------------- SIGNALS ----------------
+    def _risk_signals(self, ctx, score: float) -> List[str]:
+        infra = ctx.infrastructure
+        issue = " ".join(ctx.active_issues).lower()
+
+        signals = []
+
+        if score > 0.5:
+            signals.append("high_risk_zone")
+
         if infra.electricity == "outage":
-            alerts.append("Power outage detected — increased crime and safety risk")
+            signals.append("power_failure_zone")
 
-        if infra.water in ["critical", "outage"]:
-            alerts.append("Water supply disruption — public health risk")
+        if "outage" in issue:
+            signals.append("service_disruption")
 
-        if infra.sewage == "overflow":
-            alerts.append("Sewage overflow — environmental hazard")
-
-        if infra.roads == "blocked":
-            alerts.append("Road blockage — emergency response delays")
-
-        # -----------------------------
-        # ENVIRONMENT ALERTS
-        # -----------------------------
-        if env.flood_risk == "high":
-            alerts.append("Flood risk high — evacuation may be required")
-
-        if env.weather == "storm":
-            alerts.append("Severe weather — infrastructure instability risk")
-
-        # -----------------------------
-        # POPULATION AMPLIFIER
-        # -----------------------------
-        if province.population_density == "high":
-            alerts.append("High population density — risk impact amplified")
-
-        return alerts
+        return signals

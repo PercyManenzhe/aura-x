@@ -1,6 +1,10 @@
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass
 class LocationContext:
-    def __init__(self, province: str = "", municipality: str = "", ward: str = "", area_type: str = ""):
-        self.province = province
-        self.municipality = municipality
-        self.ward = ward
-        self.area_type = area_type
+    country: str = "South Africa"
+    province: str = ""
+    municipality: str = ""
+    ward: Optional[str] = None
+    area_type: str = "township"

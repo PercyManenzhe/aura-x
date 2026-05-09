@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
-# --------------------------- LOCATION (PROVINCE-FIRST DESIGN) ---------------------------
+
 @dataclass
 class LocationContext:
     country: str = "South Africa"
@@ -11,7 +11,7 @@ class LocationContext:
     ward: Optional[str] = None
     area_type: str = "township"
 
-# --------------------------- ENVIRONMENT ---------------------------
+
 @dataclass
 class EnvironmentalState:
     weather: str = "normal"
@@ -20,7 +20,7 @@ class EnvironmentalState:
     flood_risk: str = "low"
     temperature: Optional[float] = None
 
-# --------------------------- INFRASTRUCTURE SYSTEMS ---------------------------
+
 @dataclass
 class InfrastructureState:
     electricity: str = "stable"
@@ -30,7 +30,7 @@ class InfrastructureState:
     telecoms: str = "stable"
     infrastructure_status: str = "stable"
 
-# --------------------------- RISK SIGNALS (CORE INPUT LAYER) ---------------------------
+
 @dataclass
 class RiskSignals:
     crime_risk: str = "low"
@@ -38,83 +38,71 @@ class RiskSignals:
     flood_risk: str = "low"
     infrastructure_failure_risk: str = "low"
 
-# --------------------------- EVENT MEMORY (AI MEMORY LAYER) ---------------------------
+
 @dataclass
 class EventLog:
     event_type: str
     description: str
     timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
 
-# --------------------------- AURA-X CORE INTELLIGENCE BRAIN ---------------------------
+
 @dataclass
 class UnifiedProvinceIntelligence:
     location: LocationContext
     population_density: str = "medium"
 
-    # Environment layer
+    
     environment: EnvironmentalState = field(default_factory=EnvironmentalState)
-
-    # Infrastructure layer
+    
     infrastructure: InfrastructureState = field(default_factory=InfrastructureState)
-
-    # Risk signals layer
+    
     risks: RiskSignals = field(default_factory=RiskSignals)
 
-    # Population intelligence
+    
     service_area: str = ""
     service_failures: List[str] = field(default_factory=list)
-
-    # Operational context
+    
     active_issues: List[str] = field(default_factory=list)
 
-    # AI Memory layer
+    
     event_log: List[EventLog] = field(default_factory=list)
 
-    # Computed intelligence (from Risk Engine)
+    
     risk_score: float = 0.0
     risk_level: str = "LOW"
     risk_signals: List[str] = field(default_factory=list)
     alerts: list = field(default_factory=list)
+
     early_warning: bool = False
     emergency: bool = False
-    early_warning_triggered: bool = False
-    emergency_flag: bool = False
 
-    # System metadata
+    
     timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
     confidence: float = 1.0
 
-    # --------------------------- CORE METHODS (INTELLIGENCE LAYER) ---------------------------
-    def add_event(self, event_type: str, description: str):
-        self.event_log.append(EventLog(event_type, description))
+    # ---------------- METHODS ----------------
 
     def update_infrastructure(self, service: str, status: str):
         if hasattr(self.infrastructure, service):
             setattr(self.infrastructure, service, status)
-            self.add_event("infrastructure_update", f"{service} -> {status}")
 
-    def update_risk(self, risk_type: str, level: str):
-        if hasattr(self.risks, risk_type):
-            setattr(self.risks, risk_type, level)
-            self.add_event("risk_update", f"{risk_type} -> {level}")
 
+    
     def set_issue(self, issue: str):
         self.active_issues.append(issue)
-        self.add_event("new_issue", issue)
 
-    # Risk Engine integration hook
-    def apply_risk_engine(self, score: float, level: str, signals: List[str]):
-        self.risk_score = score
-        self.risk_level = level
-        self.risk_signals = signals
+    def add_event(self, event_type: str, description: str):
+        self.event_log.append(EventLog(event_type=event_type, description=description))
 
-        if level in ["HIGH", "CRITICAL"]:
-            self.early_warning_triggered = True
-            self.emergency_flag = True
+    def set_risk_data(self, risk_data: Dict[str, Any]):
+        self.risk_score = risk_data.get("risk_score", 0.0)
+        self.risk_level = risk_data.get("risk_level", "LOW")
+        self.early_warning = risk_data.get("early_warning", False)
 
-        self.add_event("risk_update", f"Risk={level}, Score={score}")
+        intelligence = risk_data.get("intelligence", {})
+        self.risk_signals = intelligence.get("signals", [])
 
-    # FULL SYSTEM SUMMARY
+   
     def summary(self) -> Dict[str, Any]:
         return {
             "location": self.location.__dict__,
@@ -125,10 +113,7 @@ class UnifiedProvinceIntelligence:
             "risk_level": self.risk_level,
             "risk_signals": self.risk_signals,
             "active_issues": self.active_issues,
-            "service_failures": self.service_failures,
+        
             "event_count": len(self.event_log),
-            "early_warning": self.early_warning_triggered,
-            "emergency": self.emergency_flag,
-            "timestamp": self.timestamp,
-            "confidence": self.confidence
+        
         }

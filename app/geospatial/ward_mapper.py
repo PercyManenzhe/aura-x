@@ -1,20 +1,16 @@
-
-
 class WardMapper:
-    
 
-    def map(self, province):
+    def map(self, province, risk_result=None):
         return {
-            "ward": province.location.ward,
+            "ward": getattr(province.location, "ward", None),
             "municipality": province.location.municipality,
-            "coordinates": self.get_coordinates(province.location.ward)
-        }
+            "province": province.location.province,
 
-    def get_coordinates(self, ward):
-        """
-        Placeholder — later connect real GIS data
-        """
-        return {
-            "lat": -25.0,
-            "lng": 30.0
+            "risk": {
+                "score": risk_result.get("risk_score", 0.0) if risk_result else 0.0,
+                "level": risk_result.get("risk_level", "LOW") if risk_result else "LOW",
+                "signals": risk_result.get("intelligence", {}).get("signals", []) if risk_result else []
+            },
+
+            "gis_layer": "ward_intelligence"
         }

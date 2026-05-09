@@ -8,146 +8,137 @@ load_dotenv()
 
 class LLMAdapterV2:
     """
-    Aura-X Intelligence Layer (LLM Adapter V2)
+    Aura-X Cognitive Intelligence Layer (v2)
 
-    This is the central brain connector for:
-    - reasoning
-    - decision-making
-    - risk interpretation
-    - structured outputs
+    This is the central brain of Aura-X:
+    - Municipal reasoning
+    - Risk intelligence
+    - Decision support
+    - Scenario understanding
+    - Multi-domain routing (municipal, mining, tourism)
     """
 
     def __init__(self):
         self.api_key = os.getenv("OPENAI_API_KEY")
         self.model = os.getenv("LLM_MODEL", "gpt-4o-mini")
 
-    # -----------------------------------------------------
-    # CORE CALL
-    # -----------------------------------------------------
-    def call_llm(self, prompt: str, mode: str = "reasoning") -> str:
+    # =====================================================
+    # CORE LLM CALL (SAFE MODE FIRST)
+    # =====================================================
+    def call_llm(self, prompt: str, system: Optional[str] = None) -> str:
         """
-        Base LLM call (safe fallback ready)
+        Future-ready LLM connector.
+        Right now: safe fallback (no external API dependency).
         """
 
         if not self.api_key:
-            return self._mock_response(prompt, mode)
+            return self._fallback_response(prompt)
 
-        # IMPORTANT:
-        # For now we keep safe fallback.
-        # Later we plug OpenAI / Azure / local models here.
+        # TODO (next phase):
+        # - OpenAI / Azure OpenAI / local LLM / Huawei integration
+        return self._fallback_response(prompt)
 
-        return self._mock_response(prompt, mode)
-    
-    """
-    We will replace it with this in the future when we enable real LLM calls. For now, it serves as a safe fallback to ensure the system always returns structured data.:
-
-OpenAI
-Azure OpenAI
-local LLM (Ollama)
-Huawei model APIs
-    """
-
-    # -----------------------------------------------------
-    # STRUCTURED INTELLIGENCE CALL
-    # -----------------------------------------------------
-    def structured_call(
-        self,
-        system: str,
-        user: str,
-        schema: Optional[Dict[str, Any]] = None,
-        mode: str = "reasoning"
-    ) -> Dict[str, Any]:
+    # =====================================================
+    # CORE INTELLIGENCE ENGINE (MUNICIPAL BRAIN)
+    # =====================================================
+    def reason(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Forces structured JSON output for agents
+        Converts raw municipal input into structured intelligence
         """
 
         prompt = f"""
-SYSTEM:
-{system}
+You are Aura-X Municipal Intelligence Engine.
 
-USER:
-{user}
+Analyze the context and return STRICT JSON ONLY:
 
-IMPORTANT:
-Return ONLY valid JSON.
-No explanation.
+Context:
+{json.dumps(context, indent=2)}
+
+Output schema:
+{{
+  "risks": [],
+  "impact": [],
+  "priority": "low|medium|high|critical",
+  "risk_score": 0.0,
+  "recommendations": []
+}}
 """
 
-        raw = self.call_llm(prompt, mode=mode)
+        response = self.call_llm(prompt)
 
-        # Try parse JSON safely
+
         try:
-            return json.loads(raw)
+            return json.loads(response)
         except Exception:
             return {
-                "raw_output": raw,
-                "parsed": False,
-                "mode": mode
+                "risks": ["fallback parsing used"],
+                "impact": [],
+                "priority": "medium",
+                "risk_score": 0.5,
+                "recommendations": []
             }
 
-    # -----------------------------------------------------
-    # INTELLIGENCE MODES
-    # -----------------------------------------------------
-
-    def reasoning(self, context: Dict) -> Dict:
-        return self.structured_call(
-            system="You are a municipal reasoning engine.",
-            user=json.dumps(context),
-            mode="reasoning"
-        )
-
-    def decision(self, context: Dict) -> Dict:
-        return self.structured_call(
-            system="You are a decision engine for municipal operations.",
-            user=json.dumps(context),
-            mode="decision"
-        )
-
-    def risk_analysis(self, context: Dict) -> Dict:
-        return self.structured_call(
-            system="You analyze risks in municipalities.",
-            user=json.dumps(context),
-            mode="risk"
-        )
-
-    def recommendations(self, context: Dict) -> Dict:
-        return self.structured_call(
-            system="You generate actionable municipal recommendations.",
-            user=json.dumps(context),
-            mode="recommendation"
-        )
-
-    # -----------------------------------------------------
-    # MOCK ENGINE (until API is enabled)
-    # -----------------------------------------------------
-    def _mock_response(self, prompt: str, mode: str) -> str:
+    # =====================================================
+    # DECISION ENGINE (GOVERNMENT LOGIC LAYER)
+    # =====================================================
+    def decision(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Deterministic fallback so system ALWAYS works
+        Converts risk intelligence into action decisions
         """
 
-        if mode == "risk":
-            return json.dumps({
-                "risk_score": 0.42,
-                "risks": ["Service disruption", "Public safety risk"],
-                "level": "MEDIUM"
-            })
+        risks = context.get("risks", [])
+        score = context.get("risk_score", 0.0)
 
-        if mode == "decision":
-            return json.dumps({
+        if score >= 0.7:
+            return {
+                "decision": "Emergency intervention",
+                "priority": "critical"
+            }
+        elif score >= 0.4:
+            return {
                 "decision": "Standard SLA intervention",
                 "priority": "medium"
-            })
+            }
+        else:
+            return {
+                "decision": "Monitor situation",
+                "priority": "low"
+            }
 
-        if mode == "recommendation":
-            return json.dumps({
-                "actions": [
-                    "Deploy maintenance team",
-                    "Notify municipal control room"
-                ]
-            })
+    # =====================================================
+    # MULTI-DOMAIN ROUTER (FUTURE NATIONAL SYSTEM)
+    # =====================================================
+    def route_intelligence(self, domain: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Expands Aura-X into national intelligence system
+        """
 
+        if domain == "municipal":
+            return self.reason(payload)
+
+        if domain == "mining":
+            return {
+                "status": "mining module placeholder",
+                "risk": "not implemented yet"
+            }
+
+        if domain == "tourism":
+            return {
+                "status": "tourism module placeholder",
+                "recommendation": "not implemented yet"
+            }
+
+        return {
+            "error": f"Unsupported domain: {domain}"
+        }
+
+    # =====================================================
+    # FALLBACK SAFETY ENGINE
+    # =====================================================
+    def _fallback_response(self, prompt: str) -> str:
         return json.dumps({
-            "message": "Aura-X mock reasoning output",
-            "status": "ok"
+            "status": "offline_mode",
+            "message": "Aura-X running in deterministic intelligence mode",
+            "prompt_length": len(prompt)
         })
-
+    

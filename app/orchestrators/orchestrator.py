@@ -1,5 +1,4 @@
 import yaml
-
 import uuid
 from datetime import datetime, timezone
 
@@ -46,10 +45,10 @@ def build_workflow_output(workflow_name, run_id, inputs, steps, final, confidenc
     }
 
 
-
 class AuraXOrchestrator:
     def __init__(self, yaml_path):
         self.workflow = self.load_workflow(yaml_path)
+
         self.agent_map = {
             "MunicipalOpsAgent": MunicipalOpsAgent(),
             "MunicipalReasoningAgent": MunicipalReasoningAgent(),
@@ -58,10 +57,10 @@ class AuraXOrchestrator:
             "MunicipalDecisionAgent": MunicipalDecisionAgent(),
             "MunicipalSafetyAgent": MunicipalSafetyAgent(),
             "MunicipalMonitoringAgent": MunicipalMonitoringAgent(),
-            
+
             "MiningSafetyAgent": MiningSafetyAgent(),
             "MiningRecommendationAgent": MiningRecommendationAgent(),
-           
+
             "TourismSafetyAgent": TourismSafetyAgent(),
             "TourismRecommendationAgent": TourismRecommendationAgent(),
         }
@@ -70,7 +69,9 @@ class AuraXOrchestrator:
         with open(path, "r") as f:
             return yaml.safe_load(f)
 
+    # ---------------- INITIALISE PROVINCE ----------------
     def initialize_province(self, inputs):
+
         province = UnifiedProvinceIntelligence(
             location=LocationContext(
                 province=inputs.get("province", ""),
@@ -88,48 +89,54 @@ class AuraXOrchestrator:
             issue_lower = issue.lower()
 
             if "electricity" in issue_lower:
-                province.update_infrastructure("electricity", "outage")
+                province.infrastructure.electricity = "outage"
 
             if "water" in issue_lower:
-                province.update_infrastructure("water", "critical")
+                province.infrastructure.water = "critical"
 
             if "road" in issue_lower:
-                province.update_infrastructure("roads", "damaged")
+                province.infrastructure.roads = "damaged"
 
             if "storm" in issue_lower or "rain" in issue_lower:
                 province.environment.weather = "storm"
 
         return province
 
+    # ---------------- MAIN RUN ----------------
     def run(self, inputs=None):
         inputs = inputs or {}
 
         run_id = f"AX-{uuid.uuid4().hex[:8].upper()}"
         workflow_name = self.workflow.get("workflow", "unknown")
 
-        # INPUTS → Province Intelligence
+        # 1. Province
         province = self.initialize_province(inputs)
 
-        # Province Intelligence → Risk Engine
+        # 2. Risk Engine
         risk_engine = RiskEngine()
-        risk_engine.compute(province)
+        risk_result = risk_engine.compute(province)
 
-        # GIS Intelligence
+        province.set_risk_data(risk_result)
+
+        # 3. GIS
         gis_engine = GISEngine()
         heatmap = HeatmapGenerator()
         mapper = WardMapper()
 
-        map_data = gis_engine.generate_map_data(province)
-        heatmap_data = heatmap.generate(province)
-        ward_data = mapper.map(province)
+        map_data = gis_engine.generate_map_data(province, risk_result)
+        heatmap_data = heatmap.generate(province, risk_result)
+        ward_data = mapper.map(province, risk_result)
 
-        # Simulation Engine
-        simulation_engine = SimulationEngine()
-        simulation_results = simulation_engine.run(province)
+        # 4. Simulation
+        sim_engine = SimulationEngine()
+        simulation_results = sim_engine.run(province, risk_result)
 
-        # GIS Layer → Agents
+        # 5. Context for agents
         step_context = {
             "province": province,
+            "risk": risk_result,
+            "gis": map_data,
+            "simulation": simulation_results,
             "run_id": run_id,
             "workflow": workflow_name,
             "inputs": inputs
@@ -185,10 +192,9 @@ class AuraXOrchestrator:
             "gis": {
                 "map_data": map_data,
                 "heatmap": heatmap_data,
-                "ward": ward_data,
+                "ward_data": ward_data
             },
-            "simulation": simulation_results,
-            "notes": "GIS data is currently static. Future versions will integrate real GIS datasets for dynamic mapping and analysis."
+            "simulation": simulation_results
         }
 
         return build_workflow_output(
@@ -210,6 +216,5 @@ if __name__ == "__main__":
         "issue": "electricity outage in township",
         "area": "Ward 12"
     })
-
 
     print(result)
