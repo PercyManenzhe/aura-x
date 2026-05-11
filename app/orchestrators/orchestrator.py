@@ -79,43 +79,43 @@ class AuraXOrchestrator:
         with open(path, "r") as f:
             return yaml.safe_load(f)
 
-    # ================= INITIALIZE PACKET =================
-    # ---------------- INITIALISE PACKET ----------------
-def initialize_packet(self, inputs, run_id):
+        # ================= INITIALIZE PACKET =================
+    def initialize_packet(self, inputs, run_id):
 
-    packet = IntelligencePacket(
-        run_id=run_id,
-        workflow=self.workflow.get("workflow", "unknown"),
-        province=inputs.get("province", ""),
-        municipality=inputs.get("municipality", ""),
-        ward=inputs.get("area", ""),
-        issue=inputs.get("issue", "")
-    )
+        packet = IntelligencePacket(
+            run_id=run_id,
+            workflow=self.workflow.get("workflow", "unknown"),
+            province=inputs.get("province", ""),
+            municipality=inputs.get("municipality", ""),
+            ward=inputs.get("area", ""),
+            issue=inputs.get("issue", "")
+        )
 
-    issue = packet.issue.lower()
+        issue = packet.issue.lower()
 
-    if "electricity" in issue:
-        packet.infrastructure["electricity"] = "outage"
+        if "electricity" in issue:
+            packet.infrastructure["electricity"] = "outage"
 
-    if "water" in issue:
-        packet.infrastructure["water"] = "failure"
+        if "water" in issue:
+            packet.infrastructure["water"] = "failure"
 
-    if "road" in issue:
-        packet.infrastructure["roads"] = "damaged"
+        if "road" in issue:
+            packet.infrastructure["roads"] = "damaged"
 
-    if "storm" in issue or "rain" in issue:
-        packet.environment["weather"] = "storm"
+        if "storm" in issue or "rain" in issue:
+            packet.environment["weather"] = "storm"
 
-    return packet
+        return packet
 
-    # ---------------- MAIN RUN ----------------
+    # ================= MAIN RUN =================
     def run(self, inputs=None):
+
         inputs = inputs or {}
 
         run_id = f"AX-{uuid.uuid4().hex[:8].upper()}"
         workflow_name = self.workflow.get("workflow", "unknown")
 
-        # 1. Province
+        # 1. Initialize Packet
         packet = self.initialize_packet(inputs, run_id)
 
         # 2. Risk Engine
@@ -129,23 +129,33 @@ def initialize_packet(self, inputs, run_id):
         mapper = WardMapper()
 
         map_data = gis_engine.generate_map_data(
-        packet,
-        risk_result
+            packet,
+            risk_result
         )
 
         packet.set_gis(map_data)
-        heatmap_data = heatmap.generate(packet.province, risk_result)
-        ward_data = mapper.map(packet.province, risk_result)
+
+        heatmap_data = heatmap.generate(
+            packet.province,
+            risk_result
+        )
+
+        ward_data = mapper.map(
+            packet.province,
+            risk_result
+        )
 
         # 4. Simulation
+        simulation_engine = SimulationEngine()
+
         simulation_results = simulation_engine.run(
-        packet,
-        risk_result
-   )
+            packet,
+            risk_result
+        )
 
         packet.set_simulation(simulation_results)
 
-        # 5. Context for agents
+        # 5. Context
         step_context = {
             "packet": packet,
             "risk": risk_result,
@@ -158,7 +168,9 @@ def initialize_packet(self, inputs, run_id):
 
         steps_output = []
 
+        # 6. Execute workflow agents
         for step in self.workflow.get("steps", []):
+
             step_name = step.get("name")
             agent_name = step.get("agent")
             task = step.get("task")
@@ -166,14 +178,20 @@ def initialize_packet(self, inputs, run_id):
             agent = self.agent_map.get(agent_name)
 
             if not agent:
-                output = {"error": f"Missing agent {agent_name}"}
+                output = {
+                    "error": f"Missing agent {agent_name}"
+                }
                 status = "error"
+
             else:
                 try:
                     output = agent.run(task, step_context)
                     status = "success"
+
                 except Exception as e:
-                    output = {"exception": str(e)}
+                    output = {
+                        "exception": str(e)
+                    }
                     status = "error"
 
             steps_output.append({
@@ -185,29 +203,45 @@ def initialize_packet(self, inputs, run_id):
 
             step_context[step_name] = output
 
-        errors = [s for s in steps_output if s["status"] == "error"]
+        # 7. Confidence
+        errors = [
+            s for s in steps_output
+            if s["status"] == "error"
+        ]
 
         confidence = {
             "score": 0.75 if not errors else 0.55,
-            "notes": [f"Steps: {len(steps_output)}", f"Errors: {len(errors)}"]
+            "notes": [
+                f"Steps: {len(steps_output)}",
+                f"Errors: {len(errors)}"
+            ]
         }
 
-        monitoring = MunicipalMonitoringAgent().run("monitor", {
-            "workflow": workflow_name,
-            "run_id": run_id,
-            "steps": steps_output,
-            "confidence": confidence
-        })
+        # 8. Monitoring
+        monitoring = MunicipalMonitoringAgent().run(
+            "monitor",
+            {
+                "workflow": workflow_name,
+                "run_id": run_id,
+                "steps": steps_output,
+                "confidence": confidence
+            }
+        )
 
+        # 9. Final Output
         final = {
             "summary": "Aura-X execution completed",
+
             "intelligence_packet": packet.summary(),
+
             "monitoring": monitoring,
+
             "gis": {
                 "map_data": map_data,
                 "heatmap": heatmap_data,
                 "ward_data": ward_data
             },
+
             "simulation": simulation_results
         }
 

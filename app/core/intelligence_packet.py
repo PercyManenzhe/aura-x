@@ -6,39 +6,54 @@ from datetime import datetime
 @dataclass
 class IntelligencePacket:
 
-    # Identity
-    run_id: str
-    timestamp: str
+    def __init__(
+        self,
+        run_id,
+        workflow,
+        province,
+        municipality,
+        ward,
+        issue
+    ):
 
-    # Location
-    country: str = "South Africa"
-    province: str = ""
-    municipality: str = ""
-    ward: str = ""
+        self.run_id = run_id
+        self.workflow = workflow
 
-    # Core issue
-    issue: str = ""
+        self.province = province
+        self.municipality = municipality
+        self.ward = ward
 
-    # Infrastructure
-    infrastructure: Dict[str, Any] = field(default_factory=dict)
+        self.issue = issue
 
-    # Environment
-    environment: Dict[str, Any] = field(default_factory=dict)
+        # ADD THIS
+        self.active_issues = [issue] if issue else []
 
-    # Risk
-    risk: Dict[str, Any] = field(default_factory=dict)
+        self.infrastructure = {}
+        self.environment = {}
+        self.risk = {}
+        self.gis = {}
+        self.simulation = {}
 
-    # GIS
-    gis: Dict[str, Any] = field(default_factory=dict)
+            # ---------------- GIS ----------------
+    def set_gis(self, gis_data):
+        self.gis = gis_data
 
-    # Simulation
-    simulation: Dict[str, Any] = field(default_factory=dict)
+    # ---------------- SIMULATION ----------------
+    def set_simulation(self, simulation_data):
+        self.simulation = simulation_data
 
-    # Agent outputs
-    agents: Dict[str, Any] = field(default_factory=dict)
+    # ---------------- SUMMARY ----------------
+    def summary(self):
 
-    # Monitoring
-    monitoring: Dict[str, Any] = field(default_factory=dict)
-
-    # Metadata
-    confidence: float = 1.0
+        return {
+            "run_id": self.run_id,
+            "workflow": self.workflow,
+            "province": self.province,
+            "municipality": self.municipality,
+            "ward": self.ward,
+            "issue": self.issue,
+            "risk": self.risk,
+            "gis": self.gis,
+            "simulation": self.simulation,
+            "active_issues": self.active_issues
+        }

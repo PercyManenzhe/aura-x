@@ -64,24 +64,27 @@ class RiskEngine:
         }
 
     # ---------------- INFRASTRUCTURE ----------------
+        # ---------------- INFRASTRUCTURE ----------------
     def _infra_risk(self, ctx):
+
         infra = ctx.infrastructure
 
         score = 0.0
 
-        if infra.electricity == "outage":
+        if infra.get("electricity") == "outage":
             score += 0.6
 
-        if infra.water == "failure":
+        if infra.get("water") == "failure":
             score += 0.4
 
-        if infra.roads == "damaged":
+        if infra.get("roads") == "damaged":
             score += 0.3
 
         return min(score, 1.0)
 
     # ---------------- CRIME ----------------
     def _crime_risk(self, ctx):
+
         issue = " ".join(ctx.active_issues).lower()
 
         score = 0.2
@@ -99,7 +102,8 @@ class RiskEngine:
 
     # ---------------- ENVIRONMENT ----------------
     def _environment_risk(self, ctx):
-        weather = ctx.environment.weather
+
+        weather = ctx.environment.get("weather", "normal")
 
         mapping = {
             "normal": 0.1,
@@ -112,6 +116,7 @@ class RiskEngine:
 
     # ---------------- SERVICE FAILURE ----------------
     def _service_risk(self, ctx):
+
         issue = " ".join(ctx.active_issues).lower()
 
         score = 0.1
@@ -129,26 +134,32 @@ class RiskEngine:
 
     # ---------------- CLASSIFICATION ----------------
     def _classify(self, score: float) -> str:
+
         if score >= 0.75:
             return "CRITICAL"
+
         elif score >= 0.5:
             return "HIGH"
+
         elif score >= 0.25:
             return "MEDIUM"
+
         return "LOW"
 
     # ---------------- EARLY WARNING ----------------
     def _early_warning(self, score: float, ctx) -> bool:
+
         infra = ctx.infrastructure
 
         return any([
             score >= 0.6,
             "outage" in " ".join(ctx.active_issues).lower(),
-            infra.electricity == "outage"
+            infra.get("electricity") == "outage"
         ])
 
     # ---------------- SIGNALS ----------------
     def _risk_signals(self, ctx, score: float) -> List[str]:
+
         infra = ctx.infrastructure
         issue = " ".join(ctx.active_issues).lower()
 
@@ -157,7 +168,7 @@ class RiskEngine:
         if score > 0.5:
             signals.append("high_risk_zone")
 
-        if infra.electricity == "outage":
+        if infra.get("electricity") == "outage":
             signals.append("power_failure_zone")
 
         if "outage" in issue:

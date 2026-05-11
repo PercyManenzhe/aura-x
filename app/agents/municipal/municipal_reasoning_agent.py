@@ -1,27 +1,32 @@
 class MunicipalReasoningAgent:
 
-    def run(self, task: str, context=None):
-        province = context["province"]
+    def run(self, task, context):
 
-        risks = []
-        impact = []
+        packet = context["packet"]
 
-        if province.infrastructure.electricity == "outage":
-            risks.append("Crime risk due to power outage")
-            impact.append("Street lighting failure")
+        province = packet.province
+        municipality = packet.municipality
+        issue = packet.issue
 
-        if province.infrastructure.sewage == "overflow":
-            risks.append("Severe health hazard")
-            impact.append("Children exposed to contamination")
+        infrastructure = packet.infrastructure
+        risk = packet.risk
 
-        if province.environment.weather == "storm":
-            risks.append("Flood and infrastructure damage risk")
+        reasoning = []
 
-        province.risks.infrastructure_failure_risk = "high" if risks else "low"
+        if infrastructure.get("electricity") == "outage":
+            reasoning.append(
+                "Electricity infrastructure failure detected."
+            )
+
+        if risk.get("risk_level") == "HIGH":
+            reasoning.append(
+                "High-risk escalation possible."
+            )
 
         return {
             "agent": "MunicipalReasoningAgent",
-            "risks": risks,
-            "impact": impact,
-            "risk_score": province.risk_score
-        } 
+            "province": province,
+            "municipality": municipality,
+            "issue": issue,
+            "reasoning": reasoning
+        }
